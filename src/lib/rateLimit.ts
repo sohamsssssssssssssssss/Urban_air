@@ -15,7 +15,7 @@ export interface RateLimiterOptions {
 
 /**
  * Token-bucket rate limiter keyed by client id (IP).
- * shortcut: in-process state, so limits are per Cloud Run instance; move to Redis/Memorystore if scaled out.
+ * shortcut: in-process state, so limits are per instance. Use shared storage when limits must span instances.
  * @returns `take(key)` which consumes one token if available
  */
 export function createRateLimiter({
@@ -49,8 +49,7 @@ export function createRateLimiter({
 }
 
 /**
- * Client IP for rate limiting. Google's front end *appends* the connecting IP to
- * X-Forwarded-For, so the last hop is trustworthy; earlier entries can be spoofed.
+ * Client IP for rate limiting. Vercel sets X-Forwarded-For to the public client IP.
  * @param headers - request headers
  */
 export function clientIp(headers: Headers): string {

@@ -4,6 +4,8 @@ import { handle, hasMetro, parseBody } from "@/lib/http";
 import { AdviceRequestSchema } from "@/lib/requests";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 30;
 
 /** POST /api/advice : personalised advice grounded on the live snapshot (fetched server-side). */
 export async function POST(req: Request): Promise<Response> {

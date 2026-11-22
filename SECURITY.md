@@ -9,15 +9,16 @@
 | **Hallucinated pollution values** | Users act on fake data | The LLM never sees a prompt without a live reading (503 `AQ_UNAVAILABLE` otherwise). Impact numbers come from deterministic code. Advice output is rejected if it has any number that isn't in the grounded context (`ungroundedNumbers`). After 1 retry, it falls back to rule-based advice. | `src/lib/ai/advisor.ts`, `src/lib/ai/grounding.ts` |
 | **XSS via model output** | Script execution | Model text is rendered as React text nodes only. There is no `dangerouslySetInnerHTML` and no markdown rendering. CSP, `object-src 'none'`, `base-uri 'self'`. | `src/components/*`, `next.config.ts` |
 | **Abuse / cost DoS** | Gemini and upstream quota burn | Per-IP token bucket (20 burst, 20/min) → 429 + `Retry-After`. Bodies over 16 KB are rejected. Advice is cached 15 min and AQ 10 min, with in-flight de-duplication. `maxOutputTokens` is capped. All upstream calls have 5–20 s timeouts. | `src/lib/rateLimit.ts`, `src/lib/http.ts`, `src/lib/cache.ts` |
-| **Malformed upstream data** | Crashes, wrong numbers | Every OpenAQ/CPCB response is Zod-validated. Unknown units are dropped, not guessed. Dead sensors (readings from more than 3 h before the site's newest one) are ignored. | `src/lib/fetchJson.ts`, `src/lib/aq/*` |
+| **Malformed upstream data** | Crashes, wrong numbers | Every OpenAQ/CPCB response is Zod-validated. The app drops readings with unknown units, readings older than 24 hours and readings with implausible future timestamps. | `src/lib/fetchJson.ts`, `src/lib/aq/*` |
 | **Information disclosure** | Stack traces, internals | All errors go through `toErrorResponse`: typed `{code, message}`, generic 500, and no stack traces or upstream messages. | `src/lib/errors.ts` |
 | **Clickjacking / sniffing** | UI redress | `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy: geolocation=(self)`, HSTS. | `next.config.ts` |
 
 ## Known trade-offs
 
+- Store OpenAQ, data.gov.in and Gemini keys as [Vercel environment variables](https://vercel.com/docs/environment-variables) for Production and Preview. Vercel encrypts them at rest.
 - **CSP allows `'unsafe-inline'` scripts.** Next.js injects inline bootstrap scripts. Nonce-based CSP would force every page to render dynamically, which conflicts with the efficiency goal. This is mitigated by the absence of any HTML rendering of untrusted content.
-- **The rate limiter is in-process,** so limits apply per Cloud Run instance. Use Memorystore/Redis if you scale beyond a few instances.
-- **Client IP** is the last `X-Forwarded-For` hop, which Google's front end appends. Earlier hops can be spoofed and are ignored.
+- **The cache and rate limiter are in-memory and per Vercel function instance.** Cold starts clear their state. Cache entries and rate limits are independent across instances.
+- **Client IP** comes from the `X-Forwarded-For` header set by Vercel. [Vercel request headers](https://vercel.com/docs/headers/request-headers#x-forwarded-for)
 
 ## Supply chain
 

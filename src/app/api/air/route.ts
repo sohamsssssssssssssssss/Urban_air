@@ -3,6 +3,7 @@ import { handle, parseInput } from "@/lib/http";
 import { LocationSchema } from "@/lib/profile";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 /** GET /api/air?lat=&lon=&city= : live AQ snapshot for a location. */
 export async function GET(req: Request): Promise<Response> {

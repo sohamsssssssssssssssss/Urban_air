@@ -4,6 +4,7 @@ import { handle, hasMetro, parseBody } from "@/lib/http";
 import { ChatRequestSchema } from "@/lib/requests";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 /** POST /api/chat : streamed plain-text follow-up answer grounded on the same live snapshot. */
 export async function POST(req: Request): Promise<Response> {

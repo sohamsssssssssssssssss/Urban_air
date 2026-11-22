@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Multi-stage build -> minimal, non-root image for Google Cloud Run (no HEALTHCHECK: Cloud Run probes the port itself).
+# Multi-stage build for a minimal, non-root image.
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./

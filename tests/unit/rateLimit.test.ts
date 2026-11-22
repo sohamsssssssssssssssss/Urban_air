@@ -27,7 +27,7 @@ describe("createRateLimiter", () => {
 });
 
 describe("clientIp", () => {
-  it("uses the last X-Forwarded-For hop (appended by Google's front end)", () => {
+  it("uses the last X-Forwarded-For hop", () => {
     expect(clientIp(new Headers({ "x-forwarded-for": "6.6.6.6, 1.2.3.4" }))).toBe("1.2.3.4");
     expect(clientIp(new Headers())).toBe("unknown");
   });
