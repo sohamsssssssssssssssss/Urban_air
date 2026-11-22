@@ -17,9 +17,14 @@ export interface FactCopy {
   timing: {
     action(best: string, worst?: string): string;
     why(reading: string): string;
-    commuteNote(start: string): string;
     impactMeasured(d: { pct: number; best: string; bestAvg: number; worst: string; worstAvg: number }): string;
     impactDefault: string;
+  };
+  commuteOverlap: {
+    action(d: { open: boolean; mode: string; worst: string; best: string }): string;
+    why(d: { leg: "to-work" | "home"; leave: string; arrive: string; worst: string; worstAvg: number }): string;
+    impact(d: { pct: number; best: string; bestAvg: number; micrograms: number; open: boolean; n95: number }): string;
+    forYou(mode: string, km: number): string;
   };
   mask: { action: string; why(reading: string): string; impact(pct: number): string };
   exercise: { action: string; why(reading: string): string; impact(x: number): string };

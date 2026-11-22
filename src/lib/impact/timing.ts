@@ -1,5 +1,6 @@
 import type { HourlyPoint } from "../aq/types";
-import { DEFAULT_CLEAN_WINDOW, IST_OFFSET_MINUTES, MIN_HISTORY_POINTS, WAKING_HOURS, WINDOW_HOURS } from "../constants";
+import type { CommuteMode } from "../commute";
+import { DEFAULT_CLEAN_WINDOW, IST_OFFSET_MINUTES, MIN_HISTORY_POINTS, SPEED_KMH, WAKING_HOURS, WINDOW_HOURS } from "../constants";
 
 export interface TimeWindow {
   start: number;
@@ -56,4 +57,37 @@ export function timingFromHistory(history: HourlyPoint[] | undefined): Timing {
   const worst = windows.reduce((a, b) => ((b.avg ?? 0) > (a.avg ?? 0) ? b : a));
   const reductionPct = worst.avg ? Math.round((1 - (best.avg ?? 0) / worst.avg) * PERCENT) : 0;
   return { best, worst, reductionPct, measured: true };
+}
+
+export interface CommuteOverlap {
+  leg: "to-work" | "home";
+  /** "08:36" */
+  leave: string;
+  arrive: string;
+  /** Minutes of the trip that fall inside the dirtiest window. */
+  minutes: number;
+  /** Door-to-door trip length in minutes. */
+  tripMinutes: number;
+}
+
+const clock = (minutes: number) => {
+  const m = Math.round(((minutes % 1440) + 1440) % 1440);
+  return `${String(Math.floor(m / MINUTES_PER_HOUR)).padStart(2, "0")}:${String(m % MINUTES_PER_HOUR).padStart(2, "0")}`;
+};
+
+/**
+ * Does the user's commute run through the station's dirtiest window? The trip to work arrives at
+ * `workStartHour` and the trip home leaves at `workEndHour`; trip length is distance / mode speed.
+ * @returns the leg with the larger overlap, or null when neither leg overlaps (or no measured worst window)
+ */
+export function commuteOverlap(worst: TimeWindow | undefined, p: { commuteMode: CommuteMode; commuteKm: number; workStartHour: number; workEndHour: number }): CommuteOverlap | null {
+  if (!worst || p.commuteKm <= 0) return null;
+  const tripMinutes = (p.commuteKm / SPEED_KMH[p.commuteMode]) * MINUTES_PER_HOUR;
+  const legs = [
+    { leg: "to-work" as const, from: p.workStartHour * MINUTES_PER_HOUR - tripMinutes, to: p.workStartHour * MINUTES_PER_HOUR },
+    { leg: "home" as const, from: p.workEndHour * MINUTES_PER_HOUR, to: p.workEndHour * MINUTES_PER_HOUR + tripMinutes },
+  ].map((l) => ({ ...l, minutes: Math.min(l.to, worst.end * MINUTES_PER_HOUR) - Math.max(l.from, worst.start * MINUTES_PER_HOUR) }));
+  const hit = legs.reduce((a, b) => (b.minutes > a.minutes ? b : a));
+  if (hit.minutes <= 0) return null;
+  return { leg: hit.leg, leave: clock(hit.from), arrive: clock(hit.to), minutes: Math.round(hit.minutes), tripMinutes: Math.round(tripMinutes) };
 }

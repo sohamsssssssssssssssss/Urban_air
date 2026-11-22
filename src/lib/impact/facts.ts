@@ -8,13 +8,13 @@ import { en } from "./copy/en";
 import { hi } from "./copy/hi";
 import type { FactCopy } from "./copy/types";
 import { carpoolSavings, modeSwitchSavings, openBurningPm25Grams, wfhDaySavings } from "./emissions";
-import { exerciseDoseMultiplier, modeDoseChangePct, purifierReductionPct } from "./exposure";
-import { formatWindow, timingFromHistory } from "./timing";
+import { exerciseDoseMultiplier, modeDoseChangePct, purifierReductionPct, tripDose } from "./exposure";
+import { commuteOverlap, formatWindow, timingFromHistory } from "./timing";
 
 const COPY: Record<Language, FactCopy> = { en, hi };
 const PERCENT = 100;
 const SHORT_TRIP_KM = 5;
-const hourText = (h: number) => `${String(h).padStart(2, "0")}:00`;
+const OPEN_AIR_MODES: readonly CommuteMode[] = ["walk", "cycle", "two_wheeler", "auto"];
 
 /**
  * Builds every applicable recommendation with deterministic, sourced impact numbers, in the
@@ -39,14 +39,25 @@ export function buildFacts(s: AQSnapshot, p: UserProfile, hasMetro: boolean, lan
   const timing = timingFromHistory(s.history);
   const best = formatWindow(timing.best);
   const worst = timing.worst && formatWindow(timing.worst);
-  const commuteInWorst = timing.worst !== undefined && p.workStartHour >= timing.worst.start && p.workStartHour < timing.worst.end;
   add({ id: "outdoor_timing", section: "routines", priority: poor ? "high" : "medium",
     action: c.timing.action(best, worst),
-    why: c.timing.why(reading) + (commuteInWorst ? c.timing.commuteNote(hourText(p.workStartHour)) : ""),
+    why: c.timing.why(reading),
     impact: timing.measured && timing.worst && worst
       ? c.timing.impactMeasured({ pct: timing.reductionPct ?? 0, best, bestAvg: timing.best.avg ?? 0, worst, worstAvg: timing.worst.avg ?? 0 })
       : c.timing.impactDefault,
     personalizedFor: audience(["kids", "elderly", "pets"]) });
+
+  const overlap = commuteOverlap(timing.worst, p);
+  if (overlap && timing.worst) {
+    const open = OPEN_AIR_MODES.includes(p.commuteMode);
+    const bestAvg = timing.best.avg ?? 0;
+    const worstAvg = timing.worst.avg ?? 0;
+    add({ id: "commute_overlap", section: "routines", priority: poor ? "high" : "medium",
+      action: c.commuteOverlap.action({ open, mode: mode[p.commuteMode], worst: worst ?? "", best }),
+      why: c.commuteOverlap.why({ leg: overlap.leg, leave: overlap.leave, arrive: overlap.arrive, worst: worst ?? "", worstAvg }),
+      impact: c.commuteOverlap.impact({ pct: timing.reductionPct ?? 0, best, bestAvg, micrograms: Math.round(tripDose(p.commuteMode, p.commuteKm) * (worstAvg - bestAvg) * 10) / 10, open, n95: N95_FILTRATION * PERCENT }),
+      personalizedFor: c.commuteOverlap.forYou(mode[p.commuteMode], p.commuteKm) });
+  }
 
   if (poor || p.respiratory) add({ id: "n95_mask", section: "routines", priority: urgent,
     action: c.mask.action, why: c.mask.why(reading), impact: c.mask.impact(N95_FILTRATION * PERCENT), personalizedFor: audience(["respiratory", "elderly"]) });

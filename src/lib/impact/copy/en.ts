@@ -8,9 +8,14 @@ export const en: FactCopy = {
   timing: {
     action: (best, worst) => `Schedule outdoor errands, walks and exercise for ${best}${worst ? `; avoid ${worst}` : ""}.`,
     why: (reading) => `Right now ${reading}. Smoke builds up when the air near the ground stops mixing, and clears when it mixes again.`,
-    commuteNote: (start) => ` Your ${start} start falls in the station's dirtiest window.`,
     impactMeasured: (d) => `${d.pct}% less PM2.5: over the last 24 h this station averaged ${d.bestAvg} µg/m³ during ${d.best} vs ${d.worstAvg} µg/m³ during ${d.worst}.`,
     impactDefault: "Afternoons are usually cleanest because the mixing layer is deepest (no hourly history at this station to quantify it).",
+  },
+  commuteOverlap: {
+    action: (d) => `Your ${d.mode} commute runs through this station's dirtiest hours (${d.worst}). If your hours are flexible, travel in the cleaner window (${d.best}); otherwise ${d.open ? "wear a well-fitted N95/FFP2 mask and choose less congested side roads away from main junctions" : "keep windows shut and use AC recirculation"}.`,
+    why: (d) => `You travel ${d.leave}–${d.arrive} (${d.leg === "home" ? "home" : "to work"}), inside the dirtiest window (${d.worst}), when this station averaged ${d.worstAvg} µg/m³ over the last 24 h.`,
+    impact: (d) => `Travelling in ${d.best} (average ${d.bestAvg} µg/m³) instead would cut PM2.5 on this trip by ${d.pct}%, about ${d.micrograms} µg less inhaled${d.open ? `; an N95 mask removes at least ${d.n95}% of fine particles on top` : ""}.`,
+    forYou: (mode, km) => `Your ${mode} commute, ${km} km`,
   },
   mask: {
     action: "Wear a well-fitted N95/FFP2 mask outdoors and on your commute (cloth and surgical masks do little for PM2.5).",
