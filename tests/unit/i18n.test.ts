@@ -50,7 +50,7 @@ describe("dictionaries", () => {
       expect(Object.keys(CATEGORY_LABEL[lang])).toHaveLength(6);
       expect(Object.keys(HEALTH_IMPACT[lang])).toHaveLength(6);
       expect(Object.keys(MODE_NAME[lang])).toHaveLength(7);
-      expect(Object.keys(UI[lang])).toEqual(["form", "card", "plan", "chat", "errors"]);
+      expect(Object.keys(UI[lang])).toEqual(["page", "form", "card", "plan", "chat", "errors"]);
     }
     expect(UI.hi.form.kmError(100)).toBe("0 से 100 कि.मी. के बीच दूरी लिखें।");
   });

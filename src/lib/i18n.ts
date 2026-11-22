@@ -38,6 +38,14 @@ export const MODE_NAME: Record<Language, Record<CommuteMode, string>> = {
 };
 
 const en = {
+  page: {
+    skip: "Skip to main content",
+    description: "Live air quality for your city, turned into a personal plan: when to go out, how to keep indoor air clean, and greener choices with their real impact.",
+    sources: "Air-quality data from",
+    and: "and",
+    cpcb: "CPCB via data.gov.in",
+    method: "AQI follows the CPCB National AQI method. Advice is general guidance, not medical advice.",
+  },
   form: {
     heading: "Your household",
     location: "Location",

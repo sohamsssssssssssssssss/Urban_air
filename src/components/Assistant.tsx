@@ -57,18 +57,38 @@ export default function Assistant() {
   }
 
   return (
-    <div className="grid gap-6" lang={language}>
-      <ProfileForm onSubmit={run} busy={busy} language={language} onLanguageChange={setLanguage} />
-      <AqiCard state={air} language={language} />
-      {busy && !plan && air.status !== "unavailable" && (
-        <p role="status" className="flex items-center gap-2 text-slate-700">
-          <span aria-hidden="true" className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-blue-700 border-t-transparent" />
-          {t.plan.building}
+    <>
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-3 focus:text-blue-800">
+        {t.page.skip}
+      </a>
+      <header className="bg-slate-900 text-white">
+        <div className="mx-auto max-w-5xl px-4 py-6">
+          <h1 className="text-3xl font-bold tracking-tight">SmogSense</h1>
+          <p className="mt-1 max-w-2xl text-slate-200">{t.page.description}</p>
+        </div>
+      </header>
+      <main id="main" tabIndex={-1} className="mx-auto grid max-w-5xl gap-6 px-4 py-8 focus:outline-none">
+        <ProfileForm onSubmit={run} busy={busy} language={language} onLanguageChange={setLanguage} />
+        <AqiCard state={air} language={language} />
+        {busy && !plan && air.status !== "unavailable" && (
+          <p role="status" className="flex items-center gap-2 text-slate-700">
+            <span aria-hidden="true" className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-blue-700 border-t-transparent" />
+            {t.plan.building}
+          </p>
+        )}
+        {planError && <p role="alert" className="rounded-lg border border-red-800 bg-red-50 p-3 text-red-900">{planError}</p>}
+        {plan && <AdviceTabs {...plan} />}
+        {plan && request && <ChatPanel {...request} />}
+      </main>
+      <footer className="border-t border-slate-200 bg-white">
+        <p className="mx-auto max-w-5xl px-4 py-6 text-sm text-slate-700">
+          {t.page.sources}{" "}
+          <a className="underline" href="https://openaq.org" rel="noopener noreferrer">OpenAQ</a>{" "}
+          {t.page.and}{" "}
+          <a className="underline" href="https://data.gov.in" rel="noopener noreferrer">{t.page.cpcb}</a>.{" "}
+          {t.page.method}
         </p>
-      )}
-      {planError && <p role="alert" className="rounded-lg border border-red-800 bg-red-50 p-3 text-red-900">{planError}</p>}
-      {plan && <AdviceTabs {...plan} />}
-      {plan && request && <ChatPanel {...request} />}
-    </div>
+      </footer>
+    </>
   );
 }

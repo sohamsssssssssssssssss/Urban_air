@@ -67,4 +67,8 @@ test("skip link and security headers", async ({ page }) => {
   expect(headers["x-content-type-options"]).toBe("nosniff");
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Skip to main content" })).toBeFocused();
+  await page.getByRole("radio", { name: "हिन्दी" }).check();
+  await expect(page.locator("html")).toHaveAttribute("lang", "hi");
+  await expect(page.getByRole("banner")).toContainText("ताज़ा वायु गुणवत्ता");
+  await expect(page.getByRole("contentinfo").getByRole("link", { name: "data.gov.in पर CPCB" })).toBeVisible();
 });

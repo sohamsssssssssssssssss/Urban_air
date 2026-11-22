@@ -2,6 +2,14 @@ import type { UiStrings } from "./i18n";
 
 /** Hindi UI strings. Typed against the English dictionary so no key can be missing. */
 export const hi: UiStrings = {
+  page: {
+    skip: "मुख्य सामग्री पर जाएँ",
+    description: "अपने शहर की ताज़ा वायु गुणवत्ता के आधार पर अपनी योजना पाएँ। जानें कब बाहर जाएँ, घर की हवा कैसे साफ़ रखें और पर्यावरण के अनुकूल विकल्पों से प्रदूषण के संपर्क और उत्सर्जन पर क्या असर पड़ता है।",
+    sources: "वायु गुणवत्ता के आँकड़े",
+    and: "और",
+    cpcb: "data.gov.in पर CPCB",
+    method: "AQI की गणना CPCB की राष्ट्रीय पद्धति के अनुसार होती है। यह सामान्य मार्गदर्शन है। चिकित्सा संबंधी सलाह के लिए डॉक्टर से संपर्क करें।",
+  },
   form: {
     heading: "आपका परिवार",
     location: "स्थान",
