@@ -89,6 +89,18 @@ Lighthouse 13.6.0 audited the production homepage on 22 Nov 2026.
 6. **User-initiated and cached.** Loading the homepage makes zero Gemini requests. The advice cache allows one model attempt per station, NAQI category, profile and language for 30 minutes, with a retry for invalid model output. If the grounded details change within a band, the app rebuilds the advice from current facts.
 7. **Model failover and visible fallback reasons.** `src/lib/ai/client.ts` tries `gemini-2.5-flash`, then `gemini-3.5-flash-lite` (a 404 retired-model or 429 quota error moves on to the next model; `GEMINI_MODEL` overrides the first). Every fallback to rules logs a reason code (`quota|auth|model|schema|timeout|other`, never the provider message) and `/api/advice` returns it as `fallbackReason`, so the UI says "Rule-based plan (AI busy (quota))" instead of a vague "AI unavailable". A failed attempt is not cached beyond a 60 s cooldown.
 
+## Routes: breathe the least on the way (v2)
+
+`POST /api/route` takes an origin and a destination (place names, geocoded by Nominatim, or exact coordinates) and returns routes for walking, cycling, two-wheeler and car, ranked by **estimated** PM2.5 inhaled, not just speed.
+
+- **Routes:** OSRM `alternatives=true` per mode (FOSSGIS public servers: foot, bike, car). OSRM has no motorcycle profile, so two-wheelers use the car road network and car travel times. No transit: there is no real timetable source, so none is invented.
+- **Exposure (computed in code, `src/lib/route/exposure.ts`):** ambient PM2.5 × road factor × in-mode ratio (Goel et al. 2015) × breathing rate (EPA EFH Table 6-2) × hours. Ambient PM2.5 comes from the nearest fresh reference monitor's last-24 h profile **at the time of day you travel** (hours the trip passes through are weighted by minutes).
+- **"Approximate" flag:** set when no monitor is within 25 km of the start (the city-level reading is used instead), when the station distance is unknown, or when the value is inferred from a CPCB sub-index. The UI always says exposure is estimated, never measured.
+- **Road-type adjustment:** applied only to the share of a route that OSRM marks with a road `ref` or a major class (factor and sources in `src/lib/route/constants.ts`). Live responses expose very few, so most routes show "not applied (OSRM gave no road class)" instead of a guess.
+- **Labels:** *Cleanest air* (lowest estimated PM2.5 inhaled), *Fastest* (lowest duration), *Best balance* (lowest sum of the two ranks). Ties are broken deterministically; a single candidate holds all three labels. Each card shows duration, distance, estimated PM2.5 inhaled (µg), estimated CO₂ (kg) and a one-line reason.
+- **Reasons:** Gemini only rewords the computed sentence. A reason with a number outside the computed context, or that calls the estimate "measured", is rejected and the computed sentence is kept (`src/lib/route/reasonsAi.ts`).
+- **Typed errors:** 400 invalid input (bad coordinates, same place, more than 60 km apart, departure outside the next 24 h), 404 `PLACE_NOT_FOUND`, 503 `GEOCODE_UNAVAILABLE` / `ROUTE_UNAVAILABLE` / `AQ_UNAVAILABLE`. Nominatim calls are serialised to 1 per second per its usage policy and cached for 24 h.
+
 ## Judging criteria evidence
 
 | Criterion | Evidence |
