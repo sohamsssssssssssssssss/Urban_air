@@ -43,4 +43,6 @@ export const ModelAdviceSchema = z.object({
 export type ModelAdvice = z.infer<typeof ModelAdviceSchema>;
 
 /** JSON Schema handed to Gemini's structured-output mode. */
-export const modelAdviceJsonSchema: Record<string, unknown> = { ...z.toJSONSchema(ModelAdviceSchema), $schema: undefined };
+export const modelAdviceJsonSchema: Record<string, unknown> = Object.fromEntries(
+  Object.entries(z.toJSONSchema(ModelAdviceSchema)).filter(([key]) => key !== "$schema"),
+);

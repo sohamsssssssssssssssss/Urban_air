@@ -28,7 +28,7 @@ export async function streamChat({ snapshot, profile, hasMetro, language, messag
   const ai = getGemini();
   if (!ai) throw new AIUnavailableError("Chat needs a Gemini API key. Rule-based advice above still applies.");
 
-  const context = buildContext(snapshot, profile, buildFacts(snapshot, profile, hasMetro));
+  const context = buildContext(snapshot, profile, buildFacts(snapshot, profile, hasMetro, language));
   const contents = [
     ...history.map((t) => ({ role: t.role, parts: [{ text: t.role === "user" ? wrapUserMessage(t.text) : t.text }] })),
     { role: "user", parts: [{ text: wrapUserMessage(message) }] },

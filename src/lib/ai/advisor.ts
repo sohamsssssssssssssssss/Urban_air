@@ -24,7 +24,7 @@ const cache = createTtlCache<AdviceResult>(ADVICE_CACHE_TTL_MS);
  */
 export function mergeModelAdvice(model: ModelAdvice, facts: Fact[], s: AQSnapshot, context: string, language: Language): Advice | null {
   const byId = new Map(facts.map((f) => [f.id, f]));
-  const advice: Advice = { summary: model.summary, bestOutdoorWindow: bestOutdoorWindow(s), routines: [], indoor: [], alternatives: [] };
+  const advice: Advice = { summary: model.summary, bestOutdoorWindow: bestOutdoorWindow(s, language), routines: [], indoor: [], alternatives: [] };
 
   for (const section of SECTIONS) {
     const seen = new Set<string>();
@@ -32,9 +32,8 @@ export function mergeModelAdvice(model: ModelAdvice, facts: Fact[], s: AQSnapsho
       const fact = byId.get(item.factId);
       if (!fact || fact.section !== section || seen.has(fact.id)) continue;
       seen.add(fact.id);
-      // English: use the computed impact verbatim. Hindi: accept the translation only if its numbers match.
-      const impact = language === "hi" && ungroundedNumbers(item.impact, fact.impact).length === 0 ? item.impact : fact.impact;
-      advice[section].push({ action: item.action, why: item.why, personalizedFor: item.personalizedFor, priority: item.priority, impact });
+      // Facts are already in the target language, so the computed impact is always used verbatim.
+      advice[section].push({ action: item.action, why: item.why, personalizedFor: item.personalizedFor, priority: item.priority, impact: fact.impact });
     }
     if (advice[section].length === 0 && facts.some((f) => f.section === section)) return null;
   }
@@ -81,8 +80,8 @@ async function generateWithGemini(s: AQSnapshot, profile: UserProfile, facts: Fa
 export function getAdvice(s: AQSnapshot, profile: UserProfile, language: Language, hasMetro: boolean): Promise<AdviceResult> {
   const hash = createHash("sha256").update(JSON.stringify([s.station.id, s.measuredAt, profile, language, hasMetro])).digest("hex");
   return cache.getOrLoad(hash, async () => {
-    const facts = buildFacts(s, profile, hasMetro);
+    const facts = buildFacts(s, profile, hasMetro, language);
     const ai = await generateWithGemini(s, profile, facts, language);
-    return ai ? { advice: ai, generatedBy: "gemini" } : { advice: ruleBasedAdvice(s, facts), generatedBy: "rules" };
+    return ai ? { advice: ai, generatedBy: "gemini" } : { advice: ruleBasedAdvice(s, facts, language), generatedBy: "rules" };
   });
 }
