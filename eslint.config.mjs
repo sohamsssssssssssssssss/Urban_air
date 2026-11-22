@@ -11,6 +11,7 @@ const config = [
       "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },
+  { files: ["scripts/**"], rules: { "no-console": "off" } },
 ];
 
 export default config;
