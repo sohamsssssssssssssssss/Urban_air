@@ -2,8 +2,9 @@
 
 import { useId, useState, type FormEvent } from "react";
 import { CITIES, nearestCity, type CityName } from "@/lib/cities";
-import { COMMUTE_MODES, MODE_LABEL, type CommuteMode } from "@/lib/commute";
-import type { Language, Location, UserProfile } from "@/lib/profile";
+import { COMMUTE_MODES, type CommuteMode } from "@/lib/commute";
+import { MODE_NAME, UI, type Language } from "@/lib/i18n";
+import type { Location, UserProfile } from "@/lib/profile";
 
 const MAX_KM = 100;
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
@@ -14,11 +15,14 @@ const box = "h-5 w-5 accent-blue-700";
 export interface ProfileFormProps {
   onSubmit: (location: Location, profile: UserProfile, language: Language) => void;
   busy: boolean;
+  language: Language;
+  onLanguageChange: (language: Language) => void;
 }
 
 /** Onboarding form: location, household, commute, home and language. */
-export default function ProfileForm({ onSubmit, busy }: ProfileFormProps) {
+export default function ProfileForm({ onSubmit, busy, language, onLanguageChange }: ProfileFormProps) {
   const id = useId();
+  const t = UI[language].form;
   const [city, setCity] = useState<CityName>("Delhi");
   const [geo, setGeo] = useState<{ lat: number; lon: number } | null>(null);
   const [geoMsg, setGeoMsg] = useState("");
@@ -30,19 +34,18 @@ export default function ProfileForm({ onSubmit, busy }: ProfileFormProps) {
   const [workEndHour, setEnd] = useState(18);
   const [ownsPurifier, setOwnsPurifier] = useState(false);
   const [budget, setBudget] = useState<UserProfile["budget"]>("medium");
-  const [language, setLanguage] = useState<Language>("en");
 
   function locate() {
-    if (!("geolocation" in navigator)) return setGeoMsg("Location is not supported by this browser. Please pick a city.");
-    setGeoMsg("Finding your location…");
+    if (!("geolocation" in navigator)) return setGeoMsg(t.geoUnsupported);
+    setGeoMsg(t.locating);
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         const near = nearestCity(coords.latitude, coords.longitude);
         setGeo({ lat: coords.latitude, lon: coords.longitude });
         setCity(near.name);
-        setGeoMsg(`Using your current location (nearest listed city: ${near.name}).`);
+        setGeoMsg(t.geoUsing(near.name));
       },
-      () => setGeoMsg("Couldn't get your location. Please pick a city instead."),
+      () => setGeoMsg(t.geoFailed),
       { timeout: 10_000, maximumAge: 600_000 },
     );
   }
@@ -51,7 +54,7 @@ export default function ProfileForm({ onSubmit, busy }: ProfileFormProps) {
     e.preventDefault();
     const commuteKm = Number(km);
     if (km.trim() === "" || !Number.isFinite(commuteKm) || commuteKm < 0 || commuteKm > MAX_KM) {
-      setKmError(`Enter a distance between 0 and ${MAX_KM} km.`);
+      setKmError(t.kmError(MAX_KM));
       document.getElementById(`${id}-km`)?.focus();
       return;
     }
@@ -65,51 +68,51 @@ export default function ProfileForm({ onSubmit, busy }: ProfileFormProps) {
 
   return (
     <section aria-labelledby={`${id}-h`} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 id={`${id}-h`} className="text-xl font-semibold">Your household</h2>
+      <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
       <form onSubmit={submit} noValidate className="mt-4 grid gap-6 md:grid-cols-2">
         <fieldset>
-          <legend className="font-semibold">Location</legend>
-          <label htmlFor={`${id}-city`} className="mt-2 block">City</label>
+          <legend className="font-semibold">{t.location}</legend>
+          <label htmlFor={`${id}-city`} className="mt-2 block">{t.city}</label>
           <select id={`${id}-city`} className={field} value={city} onChange={(e) => { setCity(e.target.value as CityName); setGeo(null); setGeoMsg(""); }}>
             {CITIES.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
           </select>
           <button type="button" onClick={locate} className="mt-2 min-h-11 rounded-md border border-blue-700 px-4 py-2 font-medium text-blue-800 hover:bg-blue-50">
-            Use my current location
+            {t.useLocation}
           </button>
           <p aria-live="polite" className="mt-1 text-sm text-slate-700">{geoMsg}</p>
         </fieldset>
 
         <fieldset>
-          <legend className="font-semibold">Who lives with you?</legend>
-          {([["kids", "Children"], ["elderly", "Elderly family members"], ["respiratory", "Someone with asthma or other breathing sensitivity"], ["pets", "Pets"]] as const).map(([key, label]) => (
+          <legend className="font-semibold">{t.household}</legend>
+          {(["kids", "elderly", "respiratory", "pets"] as const).map((key) => (
             <label key={key} className={checkRow}>
               <input type="checkbox" className={box} checked={household[key]} onChange={() => toggle(key)} />
-              {label}
+              {t[key]}
             </label>
           ))}
         </fieldset>
 
         <fieldset>
-          <legend className="font-semibold">Daily commute</legend>
-          <label htmlFor={`${id}-mode`} className="mt-2 block">Usual mode</label>
+          <legend className="font-semibold">{t.commute}</legend>
+          <label htmlFor={`${id}-mode`} className="mt-2 block">{t.mode}</label>
           <select id={`${id}-mode`} className={field} value={commuteMode} onChange={(e) => setCommuteMode(e.target.value as CommuteMode)}>
-            {COMMUTE_MODES.map((m) => <option key={m} value={m}>{MODE_LABEL[m][0]?.toUpperCase() + MODE_LABEL[m].slice(1)}</option>)}
+            {COMMUTE_MODES.map((m) => <option key={m} value={m}>{MODE_NAME[language][m][0]?.toUpperCase() + MODE_NAME[language][m].slice(1)}</option>)}
           </select>
-          <label htmlFor={`${id}-km`} className="mt-3 block">One-way distance (km)</label>
+          <label htmlFor={`${id}-km`} className="mt-3 block">{t.km}</label>
           <input
             id={`${id}-km`} type="number" inputMode="decimal" min={0} max={MAX_KM} step="0.5" className={field} value={km}
             onChange={(e) => setKm(e.target.value)} aria-invalid={kmError ? true : undefined} aria-describedby={kmError ? `${id}-km-err` : `${id}-km-hint`}
           />
-          {kmError ? <p id={`${id}-km-err`} className="mt-1 text-sm font-medium text-red-800">{kmError}</p> : <p id={`${id}-km-hint`} className="mt-1 text-sm text-slate-700">Use 0 if you work from home.</p>}
+          {kmError ? <p id={`${id}-km-err`} className="mt-1 text-sm font-medium text-red-800">{kmError}</p> : <p id={`${id}-km-hint`} className="mt-1 text-sm text-slate-700">{t.kmHint}</p>}
           <div className="mt-3 grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor={`${id}-start`} className="block">Work starts</label>
+              <label htmlFor={`${id}-start`} className="block">{t.workStart}</label>
               <select id={`${id}-start`} className={field} value={workStartHour} onChange={(e) => setStart(Number(e.target.value))}>
                 {HOURS.map((h) => <option key={h} value={h}>{`${h}:00`}</option>)}
               </select>
             </div>
             <div>
-              <label htmlFor={`${id}-end`} className="block">Work ends</label>
+              <label htmlFor={`${id}-end`} className="block">{t.workEnd}</label>
               <select id={`${id}-end`} className={field} value={workEndHour} onChange={(e) => setEnd(Number(e.target.value))}>
                 {HOURS.map((h) => <option key={h} value={h}>{`${h}:00`}</option>)}
               </select>
@@ -119,30 +122,30 @@ export default function ProfileForm({ onSubmit, busy }: ProfileFormProps) {
 
         <div className="grid gap-6">
           <fieldset>
-            <legend className="font-semibold">Home</legend>
+            <legend className="font-semibold">{t.home}</legend>
             <label className={checkRow}>
               <input type="checkbox" className={box} checked={ownsPurifier} onChange={() => setOwnsPurifier((v) => !v)} />
-              I own an air purifier
+              {t.purifier}
             </label>
-            <p id={`${id}-budget-l`} className="mt-2">Budget for air-quality upgrades</p>
+            <p id={`${id}-budget-l`} className="mt-2">{t.budget}</p>
             <div role="radiogroup" aria-labelledby={`${id}-budget-l`} className="flex flex-wrap gap-x-6">
               {(["low", "medium", "high"] as const).map((b) => (
                 <label key={b} className={checkRow}>
                   <input type="radio" name={`${id}-budget`} className={box} checked={budget === b} onChange={() => setBudget(b)} />
-                  {b[0]?.toUpperCase() + b.slice(1)}
+                  {t.budgets[b]}
                 </label>
               ))}
             </div>
           </fieldset>
           <fieldset>
-            <legend className="font-semibold">Advice language</legend>
+            <legend className="font-semibold">{t.language}</legend>
             <div className="flex gap-6">
-              <label className={checkRow}>
-                <input type="radio" name={`${id}-lang`} className={box} checked={language === "en"} onChange={() => setLanguage("en")} />
+              <label className={checkRow} lang="en">
+                <input type="radio" name={`${id}-lang`} className={box} checked={language === "en"} onChange={() => onLanguageChange("en")} />
                 English
               </label>
               <label className={checkRow} lang="hi">
-                <input type="radio" name={`${id}-lang`} className={box} checked={language === "hi"} onChange={() => setLanguage("hi")} />
+                <input type="radio" name={`${id}-lang`} className={box} checked={language === "hi"} onChange={() => onLanguageChange("hi")} />
                 हिन्दी
               </label>
             </div>
@@ -151,7 +154,7 @@ export default function ProfileForm({ onSubmit, busy }: ProfileFormProps) {
 
         <div className="md:col-span-2">
           <button type="submit" disabled={busy} className="min-h-11 rounded-md bg-blue-700 px-6 py-2 font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-500">
-            {busy ? "Getting your plan…" : "Get my plan"}
+            {busy ? t.submitting : t.submit}
           </button>
         </div>
       </form>

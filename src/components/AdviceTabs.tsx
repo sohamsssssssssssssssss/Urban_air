@@ -2,15 +2,9 @@
 
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 import type { Advice, AdviceItem, Section } from "@/lib/ai/schema";
-import type { Language } from "@/lib/profile";
+import { UI, type Language } from "@/lib/i18n";
 
-const TABS: Array<{ key: Section; label: string }> = [
-  { key: "routines", label: "Daily routines" },
-  { key: "indoor", label: "Indoor air" },
-  { key: "alternatives", label: "Greener choices" },
-];
-
-const PRIORITY_LABEL: Record<AdviceItem["priority"], string> = { high: "High priority", medium: "Medium priority", low: "Nice to have" };
+const TABS: Section[] = ["routines", "indoor", "alternatives"];
 const PRIORITY_STYLE: Record<AdviceItem["priority"], string> = {
   high: "border-red-800 text-red-900",
   medium: "border-amber-800 text-amber-900",
@@ -26,6 +20,7 @@ export interface AdviceTabsProps {
 /** Personalised plan in three WAI-ARIA tabs (arrow keys, Home, End). Model text is rendered as plain text only. */
 export default function AdviceTabs({ advice, generatedBy, language }: AdviceTabsProps) {
   const id = useId();
+  const t = UI[language].plan;
   const [active, setActive] = useState(0);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -40,35 +35,35 @@ export default function AdviceTabs({ advice, generatedBy, language }: AdviceTabs
 
   return (
     <section aria-labelledby={`${id}-h`} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 id={`${id}-h`} className="text-xl font-semibold">Your plan</h2>
+      <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
       <p className="mt-1 text-sm text-slate-700">
-        {generatedBy === "gemini" ? "Personalised by Gemini from the live reading. Impact numbers are calculated by SmogSense, not the AI." : "Rule-based plan (AI unavailable). Impact numbers are calculated from published research factors."}
+        {generatedBy === "gemini" ? t.byGemini : t.byRules}
       </p>
-      <div lang={language}>
+      <div>
         <p className="mt-3">{advice.summary}</p>
         <p className="mt-2 font-medium">
-          <span className="text-slate-700">Best time to be outdoors: </span>
+          <span className="text-slate-700">{t.bestTime}</span>
           {advice.bestOutdoorWindow}
         </p>
       </div>
 
-      <div role="tablist" aria-label="Plan sections" className="mt-4 flex flex-wrap gap-2 border-b border-slate-300" onKeyDown={onKeyDown}>
-        {TABS.map((t, i) => (
+      <div role="tablist" aria-label={t.tabsLabel} className="mt-4 flex flex-wrap gap-2 border-b border-slate-300" onKeyDown={onKeyDown}>
+        {TABS.map((key, i) => (
           <button
-            key={t.key} ref={(el) => { tabRefs.current[i] = el; }} id={`${id}-tab-${t.key}`} role="tab" type="button"
-            aria-selected={active === i} aria-controls={`${id}-panel-${t.key}`} tabIndex={active === i ? 0 : -1} onClick={() => setActive(i)}
+            key={key} ref={(el) => { tabRefs.current[i] = el; }} id={`${id}-tab-${key}`} role="tab" type="button"
+            aria-selected={active === i} aria-controls={`${id}-panel-${key}`} tabIndex={active === i ? 0 : -1} onClick={() => setActive(i)}
             className={`-mb-px min-h-11 rounded-t-md border-b-4 px-4 py-2 font-medium ${active === i ? "border-blue-700 text-blue-900" : "border-transparent text-slate-700 hover:text-slate-900"}`}
           >
-            {t.label} <span className="text-slate-600">({advice[t.key].length})</span>
+            {t.tabs[key]} <span className="text-slate-600">({advice[key].length})</span>
           </button>
         ))}
       </div>
 
-      {TABS.map((t, i) => (
-        <div key={t.key} id={`${id}-panel-${t.key}`} role="tabpanel" aria-labelledby={`${id}-tab-${t.key}`} hidden={active !== i} tabIndex={0} className="pt-4" lang={language}>
-          {advice[t.key].length === 0 ? <p>No recommendations in this section for your profile.</p> : (
+      {TABS.map((key, i) => (
+        <div key={key} id={`${id}-panel-${key}`} role="tabpanel" aria-labelledby={`${id}-tab-${key}`} hidden={active !== i} tabIndex={0} className="pt-4">
+          {advice[key].length === 0 ? <p>{t.empty}</p> : (
             <ul className="grid gap-4">
-              {advice[t.key].map((item, n) => <Item key={n} item={item} />)}
+              {advice[key].map((item, n) => <Item key={n} item={item} language={language} />)}
             </ul>
           )}
         </div>
@@ -77,19 +72,20 @@ export default function AdviceTabs({ advice, generatedBy, language }: AdviceTabs
   );
 }
 
-function Item({ item }: { item: AdviceItem }) {
+function Item({ item, language }: { item: AdviceItem; language: Language }) {
+  const t = UI[language].plan;
   return (
     <li className="rounded-lg border border-slate-200 p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h3 className="font-semibold">{item.action}</h3>
-        <span className={`rounded border px-2 py-0.5 text-xs font-semibold ${PRIORITY_STYLE[item.priority]}`}>{PRIORITY_LABEL[item.priority]}</span>
+        <span className={`rounded border px-2 py-0.5 text-xs font-semibold ${PRIORITY_STYLE[item.priority]}`}>{t.priority[item.priority]}</span>
       </div>
       <dl className="mt-2 grid gap-1 text-sm sm:grid-cols-[7rem_1fr]">
-        <dt className="font-semibold text-slate-700">Why</dt>
+        <dt className="font-semibold text-slate-700">{t.why}</dt>
         <dd>{item.why}</dd>
-        <dt className="font-semibold text-slate-700">Impact</dt>
+        <dt className="font-semibold text-slate-700">{t.impact}</dt>
         <dd>{item.impact}</dd>
-        <dt className="font-semibold text-slate-700">For you</dt>
+        <dt className="font-semibold text-slate-700">{t.forYou}</dt>
         <dd>{item.personalizedFor}</dd>
       </dl>
     </li>

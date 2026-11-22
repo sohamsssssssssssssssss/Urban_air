@@ -45,3 +45,13 @@ describe("AdviceTabs", () => {
     expect(screen.getByText("<img src=x onerror=alert(1)>")).toBeTruthy();
   });
 });
+
+describe("AdviceTabs in Hindi", () => {
+  it("localises labels and has no axe violations", async () => {
+    const hi = ruleBasedAdvice(snapshot, buildFacts(snapshot, profile, true, "hi"), "hi");
+    const { container } = render(<AdviceTabs advice={hi} generatedBy="rules" language="hi" />);
+    expect(screen.getByRole("tab", { name: /रोज़ की आदतें/ })).toBeTruthy();
+    expect(within(screen.getByRole("tabpanel")).getAllByText("असर").length).toBe(hi.routines.length);
+    expect((await axe(container)).violations).toEqual([]);
+  });
+});

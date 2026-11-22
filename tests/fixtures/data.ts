@@ -7,6 +7,7 @@ export const snapshot: AQSnapshot = {
   source: "OpenAQ",
   station: { id: "openaq:8118", name: "Anand Vihar, Delhi" },
   pollutants: { pm25: 182, pm10: 310, no2: 64 },
+  subIndices: { pm25: 374, pm10: 260, no2: 80 },
   measuredAt: "2026-11-22T11:00:00Z",
   aqi: 374,
   category: "Very Poor",
@@ -40,3 +41,6 @@ export function routeFetch(routes: Array<[string, unknown, number?]>) {
     return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
   };
 }
+
+/** Real snapshot captured from OpenAQ (Talkatora Garden, Delhi) with 22 h of hourly PM2.5. */
+export { default as liveSnapshot } from "./live/snapshot-delhi.json";

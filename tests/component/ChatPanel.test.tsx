@@ -26,7 +26,7 @@ describe("ChatPanel", () => {
     render(<ChatPanel location={location} profile={profile} language="en" />);
     await user.type(screen.getByLabelText("Your question"), "Hello");
     await user.click(screen.getByRole("button", { name: "Ask" }));
-    expect((await screen.findByRole("alert")).textContent).toBe("Chat needs a Gemini API key.");
+    expect((await screen.findByRole("alert")).textContent).toBe("The AI assistant is unavailable right now. The rule-based plan above still applies.");
     expect((screen.getByLabelText("Your question") as HTMLTextAreaElement).value).toBe("Hello");
   });
 });

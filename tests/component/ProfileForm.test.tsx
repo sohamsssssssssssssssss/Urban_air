@@ -3,13 +3,15 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
-import ProfileForm from "@/components/ProfileForm";
+import ProfileForm, { type ProfileFormProps } from "@/components/ProfileForm";
 
 afterEach(cleanup);
+const renderForm = (props: Partial<ProfileFormProps> = {}) =>
+  render(<ProfileForm onSubmit={vi.fn()} busy={false} language="en" onLanguageChange={vi.fn()} {...props} />);
 
 describe("ProfileForm", () => {
   it("has no axe violations and every input is labelled", async () => {
-    const { container } = render(<ProfileForm onSubmit={vi.fn()} busy={false} />);
+    const { container } = renderForm();
     expect((await axe(container)).violations).toEqual([]);
     expect(screen.getByLabelText("City")).toBeTruthy();
     expect(screen.getByLabelText("One-way distance (km)")).toBeTruthy();
@@ -17,8 +19,9 @@ describe("ProfileForm", () => {
 
   it("submits a typed location, profile and language", async () => {
     const onSubmit = vi.fn();
+    const onLanguageChange = vi.fn();
     const user = userEvent.setup();
-    render(<ProfileForm onSubmit={onSubmit} busy={false} />);
+    const { rerender } = renderForm({ onSubmit, onLanguageChange });
     await user.selectOptions(screen.getByLabelText("City"), "Patna");
     await user.click(screen.getByLabelText("Children"));
     await user.selectOptions(screen.getByLabelText("Usual mode"), "car");
@@ -27,7 +30,9 @@ describe("ProfileForm", () => {
     await user.click(screen.getByLabelText("I own an air purifier"));
     await user.click(screen.getByLabelText("Low"));
     await user.click(screen.getByLabelText("हिन्दी"));
-    await user.click(screen.getByRole("button", { name: "Get my plan" }));
+    expect(onLanguageChange).toHaveBeenCalledWith("hi");
+    rerender(<ProfileForm onSubmit={onSubmit} busy={false} language="hi" onLanguageChange={onLanguageChange} />);
+    await user.click(screen.getByRole("button", { name: "मेरी योजना बनाएँ" }));
     expect(onSubmit).toHaveBeenCalledWith(
       { lat: 25.5941, lon: 85.1376, city: "Patna" },
       expect.objectContaining({ kids: true, commuteMode: "car", commuteKm: 7, ownsPurifier: true, budget: "low", workStartHour: 9 }),
@@ -38,7 +43,7 @@ describe("ProfileForm", () => {
   it("links a distance error via aria-describedby and focuses the field", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
-    const { container } = render(<ProfileForm onSubmit={onSubmit} busy={false} />);
+    const { container } = renderForm({ onSubmit });
     const km = screen.getByLabelText("One-way distance (km)");
     await user.clear(km);
     await user.type(km, "500");
@@ -58,10 +63,17 @@ describe("ProfileForm", () => {
       configurable: true,
       value: { getCurrentPosition: (ok: PositionCallback) => ok({ coords: { latitude: 19.1, longitude: 72.9 } } as GeolocationPosition) },
     });
-    render(<ProfileForm onSubmit={onSubmit} busy={false} />);
+    renderForm({ onSubmit });
     await user.click(screen.getByRole("button", { name: "Use my current location" }));
     expect(screen.getByText(/nearest listed city: Mumbai/)).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Get my plan" }));
     expect(onSubmit.mock.calls[0]?.[0]).toEqual({ lat: 19.1, lon: 72.9, city: "Mumbai" });
+  });
+
+  it("renders every label in Hindi with no axe violations", async () => {
+    const { container } = renderForm({ language: "hi" });
+    for (const label of ["शहर", "बच्चे", "आम तौर पर साधन", "एक तरफ़ की दूरी (कि.मी.)", "मेरे पास एयर प्यूरीफ़ायर है", "कम"]) expect(screen.getByLabelText(label)).toBeTruthy();
+    expect(screen.getByRole("option", { name: "मेट्रो" })).toBeTruthy();
+    expect((await axe(container)).violations).toEqual([]);
   });
 });

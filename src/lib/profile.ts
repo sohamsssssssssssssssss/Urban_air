@@ -2,8 +2,10 @@ import { z } from "zod";
 import { CITY_NAMES } from "./cities";
 import { COMMUTE_MODES } from "./commute";
 import { COMMUTE_MAX_KM } from "./constants";
+import { LANGUAGES } from "./i18n";
 
-export { COMMUTE_MODES, MODE_LABEL, type CommuteMode } from "./commute";
+export { COMMUTE_MODES, type CommuteMode } from "./commute";
+export type { Language } from "./i18n";
 
 const hour = z.number().int().min(0).max(23);
 
@@ -33,5 +35,4 @@ export const LocationSchema = z
   .strict();
 export type Location = z.infer<typeof LocationSchema>;
 
-export const LanguageSchema = z.enum(["en", "hi"]);
-export type Language = z.infer<typeof LanguageSchema>;
+export const LanguageSchema = z.enum(LANGUAGES);
