@@ -55,3 +55,21 @@ describe("AdviceTabs in Hindi", () => {
     expect((await axe(container)).violations).toEqual([]);
   });
 });
+
+describe("AI fallback note", () => {
+  it.each([
+    ["quota", "en", "Rule-based plan (AI busy (quota))"],
+    ["model", "en", "Rule-based plan (AI model unavailable)"],
+    ["timeout", "hi", "नियम-आधारित योजना (AI में देरी हुई)"],
+  ] as const)("names the reason code (%s, %s) without exposing provider messages", (reason, language, text) => {
+    render(<AdviceTabs advice={advice} generatedBy="rules" fallbackReason={reason} language={language} />);
+    expect(screen.getByText(new RegExp(text.replace(/[()]/g, "\\$&")))).toBeTruthy();
+  });
+  it("defaults to a generic note and shows no note for AI plans", () => {
+    const { unmount } = render(<AdviceTabs advice={advice} generatedBy="rules" language="en" />);
+    expect(screen.getByText(/Rule-based plan \(AI unavailable\)/)).toBeTruthy();
+    unmount();
+    render(<AdviceTabs advice={advice} generatedBy="gemini" language="en" />);
+    expect(screen.queryByText(/Rule-based/)).toBeNull();
+  });
+});

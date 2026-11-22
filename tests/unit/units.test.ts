@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { asPollutant, toUgM3 } from "@/lib/aq/units";
+import { asPollutant, formatConcentration, toUgM3 } from "@/lib/aq/units";
 
 describe("asPollutant", () => {
   it.each([["PM2.5", "pm25"], ["pm10", "pm10"], ["OZONE", "o3"], ["NO2", "no2"], ["NH3", "nh3"], ["temperature", undefined]])("%s", (input, out) =>
@@ -33,5 +33,13 @@ describe("toUgM3", () => {
     expect(toUgM3("no2", 10, "furlongs")).toBeUndefined();
     expect(toUgM3("no2", -1, "ppm")).toBeUndefined();
     expect(toUgM3("no2", Number.NaN, "ppm")).toBeUndefined();
+  });
+});
+
+describe("formatConcentration", () => {
+  it("shows CO in mg/m³ with two decimals and everything else in whole µg/m³", () => {
+    expect(formatConcentration("co", 790.5)).toBe("0.79 mg/m³");
+    expect(formatConcentration("pm25", 68.6)).toBe("69 µg/m³");
+    expect(formatConcentration("no2", 27.27)).toBe("27 µg/m³");
   });
 });

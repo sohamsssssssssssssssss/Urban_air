@@ -1,5 +1,6 @@
 import { POLLUTANT_LABEL } from "@/lib/aq/naqi";
 import { POLLUTANTS, type AQSnapshot, type AqiCategory } from "@/lib/aq/types";
+import { formatConcentration } from "@/lib/aq/units";
 import { formatIST } from "@/lib/format";
 import { CATEGORY_LABEL, HEALTH_IMPACT, UI, type Language } from "@/lib/i18n";
 import CategoryIcon from "./CategoryIcon";
@@ -40,7 +41,7 @@ export default function AqiCard({ state, language = "en" }: { state: AirState; l
 function Reading({ snapshot: s, language }: { snapshot: AQSnapshot; language: Language }) {
   const t = UI[language].card;
   const rows = POLLUTANTS.filter((p) => s.subIndices[p] !== undefined || s.pollutants[p] !== undefined);
-  const showConc = rows.some((p) => s.pollutants[p] !== undefined);
+  const missing = s.source === "CPCB" ? t.subIndexOnly : t.notReported;
   return (
     <div>
       <p className="mb-2 text-sm font-semibold">{s.provisional ? t.provisional : t.aqiMethod}</p>
@@ -74,7 +75,7 @@ function Reading({ snapshot: s, language }: { snapshot: AQSnapshot; language: La
         <thead>
           <tr className="border-b border-slate-300">
             <th scope="col" className="py-1 pr-4">{t.pollutant}</th>
-            {showConc && <th scope="col" className="py-1 pr-4">{t.concentration}</th>}
+            <th scope="col" className="py-1 pr-4">{t.concentration}</th>
             <th scope="col" className="py-1">{t.subIndex}</th>
           </tr>
         </thead>
@@ -82,12 +83,23 @@ function Reading({ snapshot: s, language }: { snapshot: AQSnapshot; language: La
           {rows.map((p) => (
             <tr key={p} className="border-b border-slate-100">
               <th scope="row" className="py-1 pr-4 font-medium">{POLLUTANT_LABEL[p]}</th>
-              {showConc && <td className="py-1 pr-4 tabular-nums">{s.pollutants[p] === undefined ? "—" : Math.round(s.pollutants[p])}</td>}
-              <td className="py-1 tabular-nums">{s.subIndices[p] ?? "—"}</td>
+              <td className="py-1 pr-4 tabular-nums">{s.pollutants[p] === undefined ? <NotAvailable label={t.notAvailable} text={missing} /> : formatConcentration(p, s.pollutants[p])}</td>
+              <td className="py-1 tabular-nums">{s.subIndices[p] ?? <NotAvailable label={t.notAvailable} text={missing} />}</td>
             </tr>
           ))}
         </tbody>
       </table>
+      {rows.some((p) => s.pollutants[p] === undefined) && <p className="mt-2 text-xs text-slate-700">{missing}</p>}
     </div>
+  );
+}
+
+/** "n/a" with the reason as a hover tooltip and as screen-reader text (the visible footnote covers touch devices). */
+function NotAvailable({ label, text }: { label: string; text: string }) {
+  return (
+    <span title={text}>
+      <span aria-hidden="true">{label}</span>
+      <span className="sr-only">{text}</span>
+    </span>
   );
 }

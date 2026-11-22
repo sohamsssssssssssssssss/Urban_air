@@ -36,3 +36,11 @@ function convert(pollutant: Pollutant, value: number, units: string): number | u
   if (u === "ppb") return (value / PPB_PER_PPM) * ((mw * UG_PER_MG) / MOLAR_VOLUME_L);
   return undefined;
 }
+
+/**
+ * Display value + unit for a concentration stored in µg/m³. CPCB reports CO in mg/m³, so it is
+ * shown that way (2 decimals); every other pollutant stays in whole µg/m³.
+ */
+export function formatConcentration(pollutant: Pollutant, ugm3: number): string {
+  return pollutant === "co" ? `${(ugm3 / UG_PER_MG).toFixed(2)} mg/m³` : `${Math.round(ugm3)} µg/m³`;
+}
