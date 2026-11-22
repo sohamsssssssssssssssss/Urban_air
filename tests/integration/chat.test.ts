@@ -4,7 +4,7 @@ import { profile, snapshot } from "../fixtures/data";
 
 const generateContentStream = vi.fn();
 let gemini: unknown = { models: { generateContentStream } };
-vi.mock("@/lib/ai/client", () => ({ getGemini: () => gemini }));
+vi.mock("@/lib/ai/client", async (original) => ({ ...(await original<typeof import("@/lib/ai/client")>()), getGemini: () => gemini }));
 const env = vi.hoisted(() => ({ GEMINI_MODEL: undefined as string | undefined }));
 vi.mock("@/lib/env", () => ({ env }));
 
@@ -29,7 +29,8 @@ describe("streamChat", () => {
     generateContentStream.mockResolvedValue(chunks(["Not today", ", AQI 374."]));
     expect(await read(await streamChat(input))).toBe("Not today, AQI 374.");
     const req = generateContentStream.mock.calls[0]?.[0];
-    expect(req.model).toBe("gemini-2.5-flash-lite");
+    expect(req.model).toBe("gemini-2.5-flash");
+    expect(req.config.thinkingConfig).toEqual({ thinkingBudget: 0 }); // 2.5 family only
     expect(req.config.systemInstruction).toContain("Anand Vihar, Delhi");
     expect(req.contents.at(-1).parts[0].text).toBe("<user_message>Can my kid play outside?</user_message>");
     expect(req.contents[1].parts[0].text).toBe("hello");
@@ -38,7 +39,7 @@ describe("streamChat", () => {
 
   it("appends grounded guidance when the stream breaks midway", async () => {
     generateContentStream.mockResolvedValue(chunks(["Partial", "never"], 1));
-    expect(await read(await streamChat(input))).toMatch(/^Partial\n\nAI temporarily busy/);
+    expect(await read(await streamChat(input))).toMatch(/^Partial\n\nAI unavailable\. Showing data-based guidance\./);
   });
 
   it.each([
@@ -51,7 +52,7 @@ describe("streamChat", () => {
   ])("answers %s from the applicable facts on quota errors", async (message, expected) => {
     generateContentStream.mockRejectedValue({ status: 429 });
     const answer = await read(await streamChat({ ...input, message }));
-    expect(answer).toContain("AI temporarily busy, showing data-based guidance.");
+    expect(answer).toContain("AI busy (quota). Showing data-based guidance.");
     expect(answer).toContain("AQI 374 (Very Poor) at Anand Vihar, Delhi");
     expect(answer).toMatch(expected);
   });
@@ -61,14 +62,14 @@ describe("streamChat", () => {
     const answer = await read(await streamChat({
       ...input, language: "hi", message: "इसका असर कितना है?", history: [{ role: "user", text: "क्या मास्क पहनूँ?" }],
     }));
-    expect(answer).toContain("AI अभी व्यस्त है");
+    expect(answer).toContain("AI कॉन्फ़िगर नहीं है");
     expect(answer).toContain("95%");
     expect(generateContentStream).not.toHaveBeenCalled();
   });
 
   it("uses guidance when the model returns no answer", async () => {
     generateContentStream.mockResolvedValue(chunks([" "]));
-    expect(await read(await streamChat(input))).toContain("AI temporarily busy");
+    expect(await read(await streamChat(input))).toContain("AI unavailable. Showing data-based guidance.");
   });
 
   it("uses the configured model override", async () => {

@@ -1,6 +1,6 @@
 import "server-only";
 import { GoogleGenAI } from "@google/genai";
-import { GEMINI_API_VERSION } from "../constants";
+import { GEMINI_API_VERSION, GEMINI_MODELS } from "../constants";
 import { env } from "../env";
 
 let client: GoogleGenAI | null | undefined;
@@ -16,4 +16,14 @@ export function getGemini(): GoogleGenAI | null {
       : null;
   }
   return client;
+}
+
+/** Models to try, best first. `GEMINI_MODEL` (if set) goes first; duplicates are dropped. */
+export function modelChain(): string[] {
+  return [...new Set([env.GEMINI_MODEL, ...GEMINI_MODELS].filter((m): m is string => Boolean(m)))];
+}
+
+/** `thinkingBudget: 0` (fast structured output) is a 2.5-family option; Gemini 3 models reject it with HTTP 400. */
+export function thinkingFor(model: string): { thinkingConfig?: { thinkingBudget: number } } {
+  return model.startsWith("gemini-2.5") ? { thinkingConfig: { thinkingBudget: 0 } } : {};
 }

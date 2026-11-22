@@ -2,11 +2,11 @@ import "server-only";
 import { createHash } from "node:crypto";
 import type { AQSnapshot } from "../aq/types";
 import { createTtlCache } from "../cache";
-import { ADVICE_AI_TIMEOUT_MS, ADVICE_CACHE_TTL_MS, ADVICE_MAX_OUTPUT_TOKENS, AI_RETRIES, AI_TEMPERATURE, GEMINI_MODEL } from "../constants";
-import { env } from "../env";
+import { ADVICE_AI_TIMEOUT_MS, ADVICE_CACHE_TTL_MS, ADVICE_MAX_OUTPUT_TOKENS, AI_FAILURE_COOLDOWN_MS, AI_RETRIES, AI_TEMPERATURE } from "../constants";
 import { buildFacts } from "../impact/facts";
 import type { Language, UserProfile } from "../profile";
-import { getGemini } from "./client";
+import { getGemini, modelChain, thinkingFor } from "./client";
+import { classifyAiError, shouldTryNextModel, type AiFailureReason } from "./failure";
 import { bestOutdoorWindow, ruleBasedAdvice } from "./fallback";
 import { ungroundedNumbers } from "./grounding";
 import { adviceSystemPrompt, buildContext } from "./prompts";
@@ -15,9 +15,17 @@ import { ModelAdviceSchema, SECTIONS, modelAdviceJsonSchema, type Advice, type F
 export interface AdviceResult {
   advice: Advice;
   generatedBy: "gemini" | "rules";
+  /** Present when `generatedBy` is "rules" because AI was tried and failed (code only, never a message). */
+  fallbackReason?: AiFailureReason;
 }
 
-const cache = createTtlCache<{ context: string; advice: Advice | null }>(ADVICE_CACHE_TTL_MS);
+/** Successful model answers only; failures are remembered briefly in `failures` instead. */
+const cache = createTtlCache<{ context: string; advice: Advice }>(ADVICE_CACHE_TTL_MS);
+const failures = createTtlCache<AiFailureReason>(AI_FAILURE_COOLDOWN_MS);
+/** Concurrent identical requests share one Gemini call. */
+const inFlight = new Map<string, Promise<Attempt>>();
+
+type Attempt = { advice: Advice } | { reason: AiFailureReason };
 
 /**
  * Validates model output against the facts. Returns null (forcing retry/fallback) when the model
@@ -43,50 +51,68 @@ export function mergeModelAdvice(model: ModelAdvice, facts: Fact[], s: AQSnapsho
   return ungroundedNumbers(prose, context).length === 0 ? advice : null;
 }
 
-async function generateWithGemini(s: AQSnapshot, facts: Fact[], context: string, language: Language): Promise<Advice | null> {
+async function generateWithGemini(s: AQSnapshot, facts: Fact[], context: string, language: Language): Promise<Attempt> {
   const ai = getGemini();
-  if (!ai) return null;
+  if (!ai) return { reason: "auth" };
   const deadline = AbortSignal.timeout(ADVICE_AI_TIMEOUT_MS);
-  for (let attempt = 0; attempt <= AI_RETRIES && !deadline.aborted; attempt++) {
-    const res = await ai.models.generateContent({
-      model: env.GEMINI_MODEL || GEMINI_MODEL,
-      contents: `CONTEXT: ${context}`,
-      config: {
-        systemInstruction: adviceSystemPrompt(language),
-        responseMimeType: "application/json",
-        responseJsonSchema: modelAdviceJsonSchema,
-        maxOutputTokens: ADVICE_MAX_OUTPUT_TOKENS,
-        temperature: AI_TEMPERATURE,
-        thinkingConfig: { thinkingBudget: 0 },
-        abortSignal: deadline,
-      },
-    }).catch(() => {
-      console.warn("Gemini advice request failed");
-      return null;
-    });
-    if (!res) return null;
-    try {
-      const parsed = ModelAdviceSchema.safeParse(JSON.parse(res.text ?? ""));
-      const merged = parsed.success ? mergeModelAdvice(parsed.data, facts, s, context, language) : null;
-      if (merged) return merged;
-      console.warn(`Gemini advice rejected (attempt ${attempt + 1})`);
-    } catch {
-      console.warn(`Gemini advice returned invalid JSON (attempt ${attempt + 1})`);
+  let reason: AiFailureReason = "other";
+  for (const model of modelChain()) {
+    for (let attempt = 0; attempt <= AI_RETRIES && !deadline.aborted; attempt++) {
+      try {
+        const res = await ai.models.generateContent({
+          model,
+          contents: `CONTEXT: ${context}`,
+          config: {
+            systemInstruction: adviceSystemPrompt(language),
+            responseMimeType: "application/json",
+            responseJsonSchema: modelAdviceJsonSchema,
+            maxOutputTokens: ADVICE_MAX_OUTPUT_TOKENS,
+            temperature: AI_TEMPERATURE,
+            ...thinkingFor(model),
+            abortSignal: deadline,
+          },
+        });
+        const parsed = ModelAdviceSchema.safeParse(JSON.parse(res.text ?? ""));
+        const merged = parsed.success ? mergeModelAdvice(parsed.data, facts, s, context, language) : null;
+        if (merged) return { advice: merged };
+        reason = "schema"; // output failed validation or the grounding guard: retry once on this model
+      } catch (err) {
+        reason = err instanceof SyntaxError ? "schema" : classifyAiError(err);
+        if (reason !== "schema") break; // transport/model errors will not improve on an immediate retry
+      }
     }
+    console.warn(`AI advice failed reason=${reason} model=${model}`);
+    if (deadline.aborted) return { reason: "timeout" };
+    if (!shouldTryNextModel(reason)) break;
   }
-  return null;
+  return { reason };
 }
 
 /**
  * Personalised advice for a live snapshot.
- * Cache the model attempt for 30 minutes per station, NAQI category, household and language.
- * When grounded details change within that band, rebuild advice from the current facts.
+ * A successful model answer is cached 30 minutes per station, NAQI category, household and language;
+ * when grounded details change within that band, rule-based advice is rebuilt from the current facts.
+ * A failed attempt is not cached beyond a short cooldown, so a transient quota error self-heals.
  */
 export async function getAdvice(s: AQSnapshot, profile: UserProfile, language: Language, hasMetro: boolean): Promise<AdviceResult> {
   const hash = createHash("sha256").update(JSON.stringify([s.station.id, s.category, profile, language, hasMetro])).digest("hex");
   const facts = buildFacts(s, profile, hasMetro, language);
   const context = buildContext(s, profile, facts);
-  const cached = await cache.getOrLoad(hash, async () => ({ context, advice: await generateWithGemini(s, facts, context, language) }));
-  if (cached.advice && cached.context === context) return { advice: cached.advice, generatedBy: "gemini" };
-  return { advice: ruleBasedAdvice(s, facts, language), generatedBy: "rules" };
+  const rules = (fallbackReason: AiFailureReason): AdviceResult => ({ advice: ruleBasedAdvice(s, facts, language), generatedBy: "rules", fallbackReason });
+
+  const cached = cache.get(hash);
+  // Same band but the grounded facts moved on: serve fresh rules rather than a stale AI plan or a new call.
+  if (cached) return cached.context === context ? { advice: cached.advice, generatedBy: "gemini" } : rules("other");
+  const cooling = failures.get(hash);
+  if (cooling) return rules(cooling);
+
+  const pending = inFlight.get(hash) ?? generateWithGemini(s, facts, context, language).finally(() => inFlight.delete(hash));
+  inFlight.set(hash, pending);
+  const attempt = await pending;
+  if ("advice" in attempt) {
+    cache.set(hash, { context, advice: attempt.advice });
+    return { advice: attempt.advice, generatedBy: "gemini" };
+  }
+  failures.set(hash, attempt.reason);
+  return rules(attempt.reason);
 }

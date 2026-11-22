@@ -6,7 +6,7 @@ const getAirQuality = vi.fn();
 vi.mock("@/lib/aq", () => ({ getAirQuality }));
 const generateContentStream = vi.fn();
 let gemini: unknown = null;
-vi.mock("@/lib/ai/client", () => ({ getGemini: () => gemini }));
+vi.mock("@/lib/ai/client", async (original) => ({ ...(await original<typeof import("@/lib/ai/client")>()), getGemini: () => gemini }));
 
 const { GET: air } = await import("@/app/api/air/route");
 const { POST: advice } = await import("@/app/api/advice/route");
@@ -58,6 +58,7 @@ describe("API routes", () => {
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.generatedBy).toBe("rules");
+      expect(body.fallbackReason).toBe("auth"); // reason code is exposed; no provider message ever is
       expect(body.snapshot.station.name).toBe("Anand Vihar, Delhi");
       expect(body.advice.alternatives.length).toBeGreaterThan(0);
     });
@@ -101,7 +102,7 @@ describe("API routes", () => {
       expect(res.status).toBe(200);
       expect(res.headers.get("content-type")).toContain("text/plain");
       const answer = await res.text();
-      expect(answer).toContain("AI temporarily busy, showing data-based guidance.");
+      expect(answer).toContain(status === 429 ? "AI busy (quota). Showing data-based guidance." : "AI unavailable. Showing data-based guidance.");
       expect(answer).toContain("AQI 374");
     });
   });

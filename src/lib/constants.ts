@@ -20,8 +20,10 @@ export const FETCH_TIMEOUT_MS = 5_000;
 export const OPENAQ_DISCOVERY_TIMEOUT_MS = 9_000;
 /** Gemini call timeout (structured JSON generation takes longer than a data fetch). */
 export const AI_TIMEOUT_MS = 20_000;
-/** Combined budget for advice generation and any validation retry within a 30 s route. */
-export const ADVICE_AI_TIMEOUT_MS = 14_000;
+/** Shared deadline for advice generation across model failover and validation retries (route maxDuration is 30 s). */
+export const ADVICE_AI_TIMEOUT_MS = 20_000;
+/** After a failed AI attempt, skip Gemini for this long (rules are served) so a quota error is not hammered. */
+export const AI_FAILURE_COOLDOWN_MS = 60_000;
 /** A reading older than this is flagged stale in the UI. */
 export const STALE_AFTER_MS = 3 * HOUR_MS;
 /** Older readings are rejected outright (many OpenAQ sites stopped reporting years ago). */
@@ -59,7 +61,14 @@ export const IST_OFFSET = "+05:30";
 export const IST_OFFSET_MINUTES = 330;
 
 // ---- Gemini --------------------------------------------------------------------
-export const GEMINI_MODEL = "gemini-2.5-flash-lite";
+/**
+ * Models tried in order. Google retires names without notice: `gemini-2.5-flash-lite` started
+ * returning 404 "no longer available to new users" in production, silently forcing rule-based mode.
+ * `gemini-2.5-flash` is verified live with our structured-output request. `gemini-3.5-flash-lite`
+ * is the failover: it rejected `thinkingBudget` (HTTP 400), so thinking config is only sent to 2.5 models.
+ * A 404/429 on one model fails over to the next (separate quota). `GEMINI_MODEL` overrides the first.
+ */
+export const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-3.5-flash-lite"] as const;
 /** JSON mode (responseMimeType + responseJsonSchema) is rejected on API v1; verified live. */
 export const GEMINI_API_VERSION = "v1beta";
 export const ADVICE_MAX_OUTPUT_TOKENS = 4_096; // Hindi output uses ~2-3x the tokens of English

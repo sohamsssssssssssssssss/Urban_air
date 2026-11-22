@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type KeyboardEvent } from "react";
+import type { AiFailureReason } from "@/lib/ai/failure";
 import type { Advice, AdviceItem, Section } from "@/lib/ai/schema";
 import { UI, type Language } from "@/lib/i18n";
 
@@ -14,11 +15,13 @@ const PRIORITY_STYLE: Record<AdviceItem["priority"], string> = {
 export interface AdviceTabsProps {
   advice: Advice;
   generatedBy: "gemini" | "rules";
+  /** Why AI was not used (code only), shown as a short note. */
+  fallbackReason?: AiFailureReason;
   language: Language;
 }
 
 /** Personalised plan in three WAI-ARIA tabs (arrow keys, Home, End). Model text is rendered as plain text only. */
-export default function AdviceTabs({ advice, generatedBy, language }: AdviceTabsProps) {
+export default function AdviceTabs({ advice, generatedBy, fallbackReason = "other", language }: AdviceTabsProps) {
   const id = useId();
   const t = UI[language].plan;
   const [active, setActive] = useState(0);
@@ -37,7 +40,7 @@ export default function AdviceTabs({ advice, generatedBy, language }: AdviceTabs
     <section aria-labelledby={`${id}-h`} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
       <p className="mt-1 text-sm text-slate-700">
-        {generatedBy === "gemini" ? t.byGemini : t.byRules}
+        {generatedBy === "gemini" ? t.byGemini : t.byRules(t.aiReasons[fallbackReason])}
       </p>
       <div>
         <p className="mt-3">{advice.summary}</p>

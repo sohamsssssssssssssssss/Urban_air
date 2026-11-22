@@ -5,6 +5,7 @@ import { ChatRequestSchema } from "@/lib/requests";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 /** POST /api/chat : streamed plain-text follow-up answer grounded on the same live snapshot. */
 export async function POST(req: Request): Promise<Response> {

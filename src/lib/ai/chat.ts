@@ -1,11 +1,12 @@
 import "server-only";
 import type { AQSnapshot } from "../aq/types";
-import { AI_TEMPERATURE, AI_TIMEOUT_MS, AQI_SEVERE, CHAT_MAX_OUTPUT_TOKENS, GEMINI_MODEL } from "../constants";
-import { env } from "../env";
+import { AI_TEMPERATURE, AI_TIMEOUT_MS, AQI_SEVERE, CHAT_MAX_OUTPUT_TOKENS } from "../constants";
+import { UI } from "../i18n";
 import { buildFacts } from "../impact/facts";
 import type { Language, UserProfile } from "../profile";
 import type { ChatTurn } from "../requests";
-import { getGemini } from "./client";
+import { getGemini, modelChain, thinkingFor } from "./client";
+import { classifyAiError, shouldTryNextModel, type AiFailureReason } from "./failure";
 import { bestOutdoorWindow, ruleSummary } from "./fallback";
 import { buildContext, chatSystemPrompt, wrapUserMessage } from "./prompts";
 import type { Fact } from "./schema";
@@ -31,7 +32,7 @@ const INTENTS = [
 ] as const;
 const EXPLANATION = /\b(why|impact|effect|how much)\b|क्यों|असर|कितना/i;
 
-function ruleReply({ snapshot, language, message, history }: ChatInput, facts: Fact[]): string {
+function ruleReply({ snapshot, language, message, history }: ChatInput, facts: Fact[], reason: AiFailureReason): string {
   const previous = history.findLast((turn) => turn.role === "user")?.text ?? "";
   const ids = INTENTS.find(([pattern]) => pattern.test(message))?.[1]
     ?? (EXPLANATION.test(message) ? INTENTS.find(([pattern]) => pattern.test(previous))?.[1] : undefined)
@@ -43,7 +44,7 @@ function ruleReply({ snapshot, language, message, history }: ChatInput, facts: F
     const action = severe && id === "outdoor_timing" ? bestOutdoorWindow(snapshot, language) : fact.action;
     return [`${action} ${fact.why} ${fact.impact}`];
   });
-  const notice = language === "hi" ? "AI अभी व्यस्त है। डेटा पर आधारित मार्गदर्शन देखें।" : "AI temporarily busy, showing data-based guidance.";
+  const notice = UI[language].chat.fallback(UI[language].plan.aiReasons[reason]);
   return [notice, ruleSummary(snapshot, language), ...guidance].join("\n\n");
 }
 
@@ -63,30 +64,30 @@ export async function streamChat(input: ChatInput): Promise<ReadableStream<Uint8
   const encoder = new TextEncoder();
   async function* reply() {
     let sent = false;
-    if (ai) {
+    let reason: AiFailureReason = ai ? "other" : "auth";
+    const config = {
+      systemInstruction: chatSystemPrompt(buildContext(snapshot, profile, facts), language),
+      maxOutputTokens: CHAT_MAX_OUTPUT_TOKENS,
+      temperature: AI_TEMPERATURE,
+      abortSignal: AbortSignal.timeout(AI_TIMEOUT_MS),
+    };
+    for (const model of ai ? modelChain() : []) {
       try {
-        const chunks = await ai.models.generateContentStream({
-          model: env.GEMINI_MODEL || GEMINI_MODEL,
-          contents,
-          config: {
-            systemInstruction: chatSystemPrompt(buildContext(snapshot, profile, facts), language),
-            maxOutputTokens: CHAT_MAX_OUTPUT_TOKENS,
-            temperature: AI_TEMPERATURE,
-            thinkingConfig: { thinkingBudget: 0 },
-            abortSignal: AbortSignal.timeout(AI_TIMEOUT_MS),
-          },
-        });
+        const chunks = await ai!.models.generateContentStream({ model, contents, config: { ...config, ...thinkingFor(model) } });
         for await (const chunk of chunks) {
           if (!chunk.text || (!sent && !chunk.text.trim())) continue;
           sent = true;
           yield encoder.encode(chunk.text);
         }
         if (sent) return;
-      } catch {
-        console.warn("Gemini chat request failed");
+        reason = "other"; // empty answer
+      } catch (err) {
+        reason = classifyAiError(err);
       }
+      console.warn(`AI chat failed reason=${reason} model=${model}`);
+      if (sent || !shouldTryNextModel(reason)) break; // never switch models after text was streamed
     }
-    yield encoder.encode((sent ? "\n\n" : "") + ruleReply(input, facts));
+    yield encoder.encode((sent ? "\n\n" : "") + ruleReply(input, facts, reason));
   }
   const iterator = reply();
   return new ReadableStream<Uint8Array>({

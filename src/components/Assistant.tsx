@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import type { AiFailureReason } from "@/lib/ai/failure";
 import type { Advice } from "@/lib/ai/schema";
 import { UI, errorMessage, type Language } from "@/lib/i18n";
 import type { Location, UserProfile } from "@/lib/profile";
@@ -13,7 +14,7 @@ import { ApiError, fetchAdvice, fetchAir } from "./apiClient";
 // Chat is below the fold and only useful after advice loads: keep it out of the initial bundle.
 const ChatPanel = dynamic(() => import("./ChatPanel"), { loading: () => <p>…</p> });
 
-type Plan = { advice: Advice; generatedBy: "gemini" | "rules"; language: Language };
+type Plan = { advice: Advice; generatedBy: "gemini" | "rules"; fallbackReason?: AiFailureReason; language: Language };
 type Request = { location: Location; profile: UserProfile; language: Language };
 
 /** Client island orchestrating onboarding -> live AQI -> plan -> chat. */
@@ -44,8 +45,8 @@ export default function Assistant() {
       .then((snapshot) => setAir({ status: "ready", snapshot }))
       .catch((err: unknown) => setAir({ status: "unavailable", message: messageFor(err, lang) }));
     const adviceCall = fetchAdvice(location, profile, lang)
-      .then(({ advice, generatedBy, snapshot }) => {
-        setPlan({ advice, generatedBy, language: lang });
+      .then(({ advice, generatedBy, fallbackReason, snapshot }) => {
+        setPlan({ advice, generatedBy, fallbackReason, language: lang });
         setAir({ status: "ready", snapshot });
       })
       .catch((err: unknown) => {

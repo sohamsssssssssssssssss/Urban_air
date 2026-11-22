@@ -1,4 +1,5 @@
 import type { AqiCategory } from "./aq/types";
+import type { AiFailureReason } from "./ai/failure";
 import type { CommuteMode } from "./commute";
 import { hi } from "./i18n.hi";
 
@@ -92,13 +93,17 @@ const en = {
     stale: "Heads up: this reading is more than 3 hours old. The station may be delayed.",
     caption: "Pollutant readings",
     pollutant: "Pollutant",
-    concentration: "Latest (µg/m³)",
-    subIndex: "Sub-index",
+    concentration: "Last hour",
+    subIndex: "Sub-index (24h)",
+    notAvailable: "n/a",
+    subIndexOnly: "CPCB publishes sub-index only.",
+    notReported: "Not reported by this station.",
   },
   plan: {
     heading: "Your plan",
     byGemini: "Personalised by Gemini from the live reading. Impact numbers are calculated by SmogSense, not the AI.",
-    byRules: "Rule-based plan (AI unavailable). Impact numbers are calculated from published research factors.",
+    byRules: (reason: string) => `Rule-based plan (${reason}). Impact numbers are calculated from published research factors.`,
+    aiReasons: { quota: "AI busy (quota)", auth: "AI not configured", model: "AI model unavailable", schema: "AI answer failed validation", timeout: "AI timed out", other: "AI unavailable" } as Record<AiFailureReason, string>,
     bestTime: "Best time to be outdoors: ",
     tabsLabel: "Plan sections",
     tabs: { routines: "Daily routines", indoor: "Indoor air", alternatives: "Greener choices" },
@@ -115,6 +120,7 @@ const en = {
     you: "You said: ",
     bot: "SmogSense: ",
     thinking: "Thinking…",
+    fallback: (reason: string) => `${reason}. Showing data-based guidance.`,
     label: "Your question",
     placeholder: "e.g. Is it safe to take my kids to the park this evening?",
     count: (n: number, max: number) => `${n}/${max} characters`,

@@ -7,7 +7,7 @@ import { liveSnapshot, profile } from "../fixtures/data";
 
 const generateContent = vi.fn();
 let gemini: { models: { generateContent: typeof generateContent } } | null = { models: { generateContent } };
-vi.mock("@/lib/ai/client", () => ({ getGemini: () => gemini }));
+vi.mock("@/lib/ai/client", async (original) => ({ ...(await original<typeof import("@/lib/ai/client")>()), getGemini: () => gemini }));
 
 // The real snapshot and real Gemini responses were captured together, so the model's numbers are grounded in it.
 const snapshot = liveSnapshot as AQSnapshot;
@@ -69,7 +69,7 @@ describe("getAdvice", () => {
   });
 
   it("falls back to rules when the API throws, in the requested language", async () => {
-    generateContent.mockRejectedValue(new Error("quota"));
+    generateContent.mockRejectedValue(new Error("network down"));
     const { generatedBy, advice } = await advise("hi");
     expect(generatedBy).toBe("rules");
     expect(advice.summary).toContain("मध्यम");
