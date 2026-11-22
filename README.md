@@ -87,6 +87,7 @@ Lighthouse 13.6.0 audited the production homepage on 22 Nov 2026.
 4. **Number guard.** Any number in the model's summary, action or why text that doesn't appear in the grounded context causes the output to be rejected. It then retries once, and after that uses the rule-based fallback. The fallback works with zero AI.
 5. **Chat** uses the server-fetched snapshot and facts. User text is delimited and capped at 500 characters. If Gemini is unavailable or fails mid-stream, chat returns HTTP 200 with a notice and keyword-matched guidance from those facts.
 6. **User-initiated and cached.** Loading the homepage makes zero Gemini requests. The advice cache allows one model attempt per station, NAQI category, profile and language for 30 minutes, with a retry for invalid model output. If the grounded details change within a band, the app rebuilds the advice from current facts.
+7. **Model failover and visible fallback reasons.** `src/lib/ai/client.ts` tries `gemini-2.5-flash`, then `gemini-3.5-flash-lite` (a 404 retired-model or 429 quota error moves on to the next model; `GEMINI_MODEL` overrides the first). Every fallback to rules logs a reason code (`quota|auth|model|schema|timeout|other`, never the provider message) and `/api/advice` returns it as `fallbackReason`, so the UI says "Rule-based plan (AI busy (quota))" instead of a vague "AI unavailable". A failed attempt is not cached beyond a 60 s cooldown.
 
 ## Judging criteria evidence
 
