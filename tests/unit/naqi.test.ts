@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { aqiFromSubIndices, categoryFor, computeAqi, subIndex, subIndicesFor } from "@/lib/aq/naqi";
+import { aqiConcentration, aqiFromSubIndices, categoryFor, computeAqi, subIndex, subIndicesFor } from "@/lib/aq/naqi";
+import { HOUR_MS } from "@/lib/constants";
 import type { Pollutant } from "@/lib/aq/types";
 
 describe("categoryFor", () => {
@@ -18,6 +19,7 @@ describe("subIndex at every CPCB breakpoint edge", () => {
     o3: [50, 100, 168, 208, 748],
     co: [1000, 2000, 10000, 17000, 34000], // µg/m³ in, mg/m³ breakpoints
     so2: [40, 80, 380, 800, 1600],
+    nh3: [200, 400, 800, 1200, 1800],
   };
   const upper = [50, 100, 200, 300, 400];
   for (const [p, cs] of Object.entries(edges) as Array<[Pollutant, number[]]>) {
@@ -37,6 +39,27 @@ describe("subIndex at every CPCB breakpoint edge", () => {
     expect(subIndex("pm25", -5)).toBe(0);
     expect(subIndex("pm25", 380)).toBe(500);
     expect(subIndex("pm25", 2000)).toBe(500);
+  });
+});
+
+describe("NAQI averaging windows", () => {
+  const end = Date.parse("2026-11-22T12:30:00Z");
+  const point = (hoursAgo: number, value: number) => ({ at: new Date(end - hoursAgo * HOUR_MS).toISOString(), value });
+
+  it("requires 16 distinct valid hours and takes their arithmetic mean within 24 hours", () => {
+    const sparse = [
+      ...Array.from({ length: 15 }, (_, i) => point(i + 1, 60)),
+      point(15, 60), point(17, -1), point(25, 500), point(0, 500), { at: "invalid", value: 500 },
+    ];
+    expect(aqiConcentration("pm25", sparse, end)).toBeUndefined();
+    expect(aqiConcentration("pm25", [...sparse, point(24, 92)], end)).toBe(62);
+  });
+
+  it.each(["co", "o3"] as const)("takes the maximum complete rolling 8-hour mean for %s", (pollutant) => {
+    const recent = Array.from({ length: 8 }, (_, i) => point(i + 1, 10));
+    const peak = Array.from({ length: 8 }, (_, i) => point(i + 10, 30));
+    expect(aqiConcentration(pollutant, [...recent, ...peak], end)).toBe(30);
+    expect(aqiConcentration(pollutant, [...recent.slice(1), ...peak.slice(1)], end)).toBeUndefined();
   });
 });
 

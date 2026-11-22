@@ -5,7 +5,7 @@ import { env } from "../env";
 import { AQUnavailableError } from "../errors";
 import { nearestCity } from "../cities";
 import { aqiFromSubIndices, subIndicesFor } from "./naqi";
-import { fetchCPCB } from "./cpcb";
+import { fetchCpcbStations } from "./cpcb";
 import { fetchOpenAQ } from "./openaq";
 import type { AQSnapshot, GeoQuery, StationReading } from "./types";
 
@@ -23,28 +23,38 @@ export function toSnapshot(reading: StationReading, now = Date.now()): AQSnapsho
   const subIndices = reading.subIndices ?? subIndicesFor(reading.pollutants);
   const result = aqiFromSubIndices(subIndices);
   if (!result) return null;
-  return { ...reading, subIndices, ...result, fetchedAt: new Date(now).toISOString(), stale: age > STALE_AFTER_MS };
+  const provisional = reading.provisional ?? (reading.source === "OpenAQ" && reading.subIndices === undefined);
+  return { ...reading, subIndices, ...result, provisional, fetchedAt: new Date(now).toISOString(), stale: age >= STALE_AFTER_MS };
 }
+
+const stationName = (name: string) => name.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
 
 async function loadFromSources(query: GeoQuery): Promise<AQSnapshot> {
   const city = query.city ?? nearestCity(query.lat, query.lon).name;
-  const sources: Array<() => Promise<StationReading>> = [];
-  if (env.OPENAQ_API_KEY) sources.push(() => fetchOpenAQ(query, env.OPENAQ_API_KEY as string));
-  if (env.DATA_GOV_IN_API_KEY) sources.push(() => fetchCPCB({ ...query, city }, env.DATA_GOV_IN_API_KEY as string));
-
-  for (const load of sources) {
-    try {
-      const snapshot = toSnapshot(await load());
-      if (snapshot) return snapshot;
-    } catch (err) {
-      console.warn("AQ source failed, trying next", err instanceof Error ? err.message : err);
-    }
+  const now = Date.now();
+  const { OPENAQ_API_KEY, DATA_GOV_IN_API_KEY } = env;
+  const [open, official] = await Promise.allSettled([
+    OPENAQ_API_KEY && fetchOpenAQ(query, OPENAQ_API_KEY, now),
+    DATA_GOV_IN_API_KEY && fetchCpcbStations({ ...query, city }, DATA_GOV_IN_API_KEY, now),
+  ]);
+  const openAQ = open.status === "fulfilled" && open.value ? toSnapshot(open.value, now) : null;
+  const stations = official.status === "fulfilled" ? official.value || [] : [];
+  const nearest = stations[0];
+  const cpcb = nearest ? toSnapshot(nearest, now) : null;
+  if (cpcb && !openAQ) return cpcb;
+  if (!openAQ) throw new AQUnavailableError();
+  if (cpcb && !cpcb.stale) {
+    const name = stationName(openAQ.station.name);
+    const match = stations.find((s) => stationName(s.station.name) === name && now - Date.parse(s.measuredAt) < STALE_AFTER_MS);
+    const sameStation = match && toSnapshot(match, now);
+    if (sameStation) return { ...sameStation, pollutants: openAQ.pollutants, history: openAQ.history, pm25MeasuredAt: openAQ.pm25MeasuredAt };
+    if (cpcb.station.distanceM !== undefined && cpcb.station.distanceM <= (openAQ.station.distanceM ?? -1)) return cpcb;
   }
-  throw new AQUnavailableError();
+  return openAQ;
 }
 
 /**
- * Live air quality for a location: OpenAQ first, then CPCB, else AQUnavailableError.
+ * Prefer fresh CPCB at the same or a closer station, with OpenAQ otherwise.
  * Cached for 10 minutes per ~1 km grid cell; concurrent identical requests share one fetch.
  * @param query - coordinates and optional city
  */

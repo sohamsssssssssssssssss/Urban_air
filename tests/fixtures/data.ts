@@ -14,6 +14,7 @@ export const snapshot: AQSnapshot = {
   dominant: "pm25",
   fetchedAt: "2026-11-22T12:00:00Z",
   stale: false,
+  provisional: false,
 };
 
 export const profile: UserProfile = {

@@ -12,6 +12,8 @@ describe("AqiCard", () => {
     const { container } = render(<AqiCard state={{ status: "ready", snapshot }} />);
     expect(container.querySelector(".text-5xl")?.textContent).toBe("AQI 374");
     expect(screen.getByText("Very Poor")).toBeTruthy();
+    expect(screen.getByText("AQI (24h, official method)")).toBeTruthy();
+    expect(screen.getByText("Now (last hour) PM2.5")).toBeTruthy();
     expect(screen.getByText(/Anand Vihar, Delhi · measured 22 Nov, 16:30 IST · source OpenAQ/)).toBeTruthy();
     expect(screen.getByRole("rowheader", { name: "PM2.5" })).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Sub-index" })).toBeTruthy();
@@ -32,6 +34,12 @@ describe("AqiCard", () => {
   it("warns about stale readings", () => {
     render(<AqiCard state={{ status: "ready", snapshot: { ...snapshot, stale: true } }} />);
     expect(screen.getByText(/more than 3 hours old/)).toBeTruthy();
+  });
+
+  it("labels the result provisional when hourly history is incomplete", () => {
+    render(<AqiCard state={{ status: "ready", snapshot: { ...snapshot, provisional: true } }} />);
+    expect(screen.getByText("Provisional AQI")).toBeTruthy();
+    expect(screen.getByText(/Hourly history is incomplete/)).toBeTruthy();
   });
 
   it("shows an explicit unavailable state instead of guessed values", async () => {

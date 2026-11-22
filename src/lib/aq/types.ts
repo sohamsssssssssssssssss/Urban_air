@@ -1,4 +1,4 @@
-export const POLLUTANTS = ["pm25", "pm10", "no2", "o3", "so2", "co"] as const;
+export const POLLUTANTS = ["pm25", "pm10", "no2", "o3", "so2", "co", "nh3"] as const;
 export type Pollutant = (typeof POLLUTANTS)[number];
 
 /** Pollutant concentrations, all normalised to µg/m³. */
@@ -22,11 +22,13 @@ export type AqSource = "OpenAQ" | "CPCB";
 /** One station's latest reading, as returned by a source adapter. */
 export interface StationReading {
   source: AqSource;
-  station: { id: string; name: string };
-  /** Measured concentrations (OpenAQ). Empty for CPCB, which publishes sub-indices only. */
+  station: { id: string; name: string; distanceM?: number };
+  /** Latest hourly concentrations, when available for this station. */
   pollutants: Concentrations;
-  /** Sub-indices published by the source (CPCB). Computed from `pollutants` otherwise. */
+  pm25MeasuredAt?: string;
+  /** Published CPCB sub-indices or OpenAQ sub-indices calculated using hourly history. */
   subIndices?: SubIndices;
+  provisional?: boolean;
   /** Last ~24 h of hourly PM2.5 (OpenAQ only), used for data-driven timing advice. */
   history?: HourlyPoint[];
   /** ISO timestamp of the measurement. */
@@ -36,6 +38,7 @@ export interface StationReading {
 /** Normalised, source-agnostic snapshot that the UI and AI are grounded on. */
 export interface AQSnapshot extends StationReading {
   subIndices: SubIndices;
+  provisional: boolean;
   aqi: number;
   category: AqiCategory;
   dominant: Pollutant;

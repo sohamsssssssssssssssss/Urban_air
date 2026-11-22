@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { asPollutant, toUgM3 } from "@/lib/aq/units";
 
 describe("asPollutant", () => {
-  it.each([["PM2.5", "pm25"], ["pm10", "pm10"], ["OZONE", "o3"], ["NO2", "no2"], ["NH3", undefined], ["temperature", undefined]])("%s", (input, out) =>
+  it.each([["PM2.5", "pm25"], ["pm10", "pm10"], ["OZONE", "o3"], ["NO2", "no2"], ["NH3", "nh3"], ["temperature", undefined]])("%s", (input, out) =>
     expect(asPollutant(input)).toBe(out),
   );
 });

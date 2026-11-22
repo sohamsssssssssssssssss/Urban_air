@@ -44,7 +44,7 @@ describe("getAirQuality (real fixtures)", () => {
     const s = await (await load()).getAirQuality(DELHI);
     expect(s.source).toBe("OpenAQ");
     expect(s.station.name).toBe("Talkatora Garden, Delhi - DPCC");
-    expect(s).toMatchObject({ aqi: 195, category: "Moderate", dominant: "pm25", stale: false, measuredAt: "2026-11-22T12:30:00.000Z" });
+    expect(s).toMatchObject({ aqi: 319, category: "Very Poor", dominant: "pm25", stale: false, provisional: true, measuredAt: "2026-11-22T12:30:00.000Z" });
     expect(s.pollutants.pm25).toBe(88.56);
     expect(s.pollutants.no2).toBeCloseTo(27.27, 1); // 14.49 ppb
     expect(s.pollutants.co).toBeUndefined(); // live value 0.34 labelled "ppb" is really ppm: dropped
@@ -60,8 +60,23 @@ describe("getAirQuality (real fixtures)", () => {
     expect(s.source).toBe("CPCB");
     expect(s.station.name).toBe("Mandir Marg, Delhi - DPCC"); // nearest of the three, 3 km
     expect(s.pollutants).toEqual({});
-    expect(s.subIndices).toEqual({ pm25: 205, pm10: 127, no2: 19, o3: 53, so2: 37, co: 62 });
-    expect(s).toMatchObject({ aqi: 205, category: "Poor", dominant: "pm25", measuredAt: "2026-11-22T12:30:00.000Z" });
+    expect(s.subIndices).toMatchObject({ pm25: 205, pm10: 127, no2: 19, o3: 53, so2: 37, co: 62 });
+    expect(s).toMatchObject({ aqi: 205, category: "Poor", dominant: "pm25", provisional: false, measuredAt: "2026-11-22T12:30:00.000Z" });
+  });
+
+  it.each([
+    ["Talkatora Garden, Delhi-DPCC", "28.65", "22-11-2026 18:00:00", "CPCB", 88.56],
+    ["A closer station", "28.61", "22-11-2026 18:00:00", "CPCB", undefined],
+    ["A farther station", "28.65", "22-11-2026 18:00:00", "OpenAQ", 88.56],
+    ["Talkatora Garden, Delhi-DPCC", "28.61", "22-11-2026 13:00:00", "OpenAQ", 88.56],
+  ])("selects %s at %s with timestamp %s using %s", async (station, latitude, last_update, source, pm25) => {
+    const record = { station, latitude, longitude: "77.21", last_update, pollutant_id: "PM2.5", avg_value: "283" };
+    vi.stubGlobal("fetch", vi.fn(routeFetch([...liveOpenAQ, ["api.data.gov.in", { records: [record] }]])));
+    const s = await (await load()).getAirQuality(DELHI);
+    expect(s.source).toBe(source);
+    expect(s.pollutants.pm25).toBe(pm25);
+    expect(s.provisional).toBe(source === "OpenAQ");
+    if (source === "CPCB") expect(s.aqi).toBe(283);
   });
 
   it("falls back to CPCB when every nearby OpenAQ site is dead (the Bengaluru case)", async () => {
@@ -80,8 +95,20 @@ describe("getAirQuality (real fixtures)", () => {
     vi.stubGlobal("fetch", vi.fn(routeFetch([["/locations/1/latest", latest], ["/sensors/", { results: [] }], ["/locations?", loc]])));
     const s = await (await load()).getAirQuality(DELHI);
     expect(s.pollutants).toEqual({ pm25: 60 });
-    expect(s.aqi).toBe(100);
+    expect(s).toMatchObject({ aqi: 100, provisional: true });
     expect(s.history).toEqual([]);
+  });
+
+  it("clears the provisional flag when OpenAQ reports 16 valid hours", async () => {
+    const loc = oneLocation(1, hoursAgo(1), [[11, "pm25", "µg/m³"]]);
+    const latest = { results: [{ datetime: { utc: hoursAgo(1) }, value: 60, sensorsId: 11 }] };
+    const history = { results: Array.from({ length: 16 }, (_, i) => ({
+      value: 120,
+      period: { datetimeFrom: { utc: hoursAgo(i + 2) } },
+    })) };
+    vi.stubGlobal("fetch", vi.fn(routeFetch([["/locations/1/latest", latest], ["/sensors/11/hours", history], ["/locations?", loc]])));
+    const s = await (await load()).getAirQuality(DELHI);
+    expect(s).toMatchObject({ aqi: 300, provisional: false, pollutants: { pm25: 60 } });
   });
 
   it("flags readings 3-24 h old as stale and rejects older ones", async () => {
@@ -133,6 +160,6 @@ describe("getAirQuality (real fixtures)", () => {
     const calls = fetchMock.mock.calls.length;
     await getAirQuality({ lat: 28.6101, lon: 77.2101 });
     expect(fetchMock).toHaveBeenCalledTimes(calls);
-    expect(calls).toBe(5); // locations + 3 latest + 1 history
+    expect(calls).toBe(10); // OpenAQ locations + 3 latest + 5 histories, plus CPCB
   });
 });

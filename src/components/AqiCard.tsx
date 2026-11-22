@@ -43,6 +43,7 @@ function Reading({ snapshot: s, language }: { snapshot: AQSnapshot; language: La
   const showConc = rows.some((p) => s.pollutants[p] !== undefined);
   return (
     <div>
+      <p className="mb-2 text-sm font-semibold">{s.provisional ? t.provisional : t.aqiMethod}</p>
       <div className={`flex flex-wrap items-center gap-4 rounded-lg border-l-8 p-4 ${CATEGORY_STYLE[s.category]}`}>
         <p className="text-5xl font-bold tabular-nums">
           <span className="sr-only">AQI </span>
@@ -57,7 +58,14 @@ function Reading({ snapshot: s, language }: { snapshot: AQSnapshot; language: La
         </div>
       </div>
       <p className="mt-3 text-sm text-slate-700">
-        {t.meta(s.station.name, formatIST(s.measuredAt), s.source)} {t.method(POLLUTANT_LABEL[s.dominant])}
+        {t.meta(s.station.name, formatIST(s.measuredAt), s.source)} {t.dominant(POLLUTANT_LABEL[s.dominant])}
+      </p>
+      {s.provisional && <p className="mt-2 text-sm text-amber-900">{t.provisionalDetail}</p>}
+      <p className="mt-3 text-sm text-slate-800">
+        <strong>{t.lastHour}</strong>{" · "}
+        {s.pollutants.pm25 !== undefined
+          ? `${Math.round(s.pollutants.pm25)} µg/m³ · ${formatIST(s.pm25MeasuredAt ?? s.measuredAt)}`
+          : t.noHourlyPm25}
       </p>
       {s.stale && <p className="mt-2 rounded border border-amber-700 bg-amber-50 p-2 text-sm font-medium text-amber-900">{t.stale}</p>}
       <table className="mt-4 w-full max-w-md text-left text-sm">

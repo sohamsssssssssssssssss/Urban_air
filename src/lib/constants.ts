@@ -5,7 +5,7 @@
  */
 
 const MINUTE_MS = 60_000;
-const HOUR_MS = 60 * MINUTE_MS;
+export const HOUR_MS = 60 * MINUTE_MS;
 
 // ---- Caching, timeouts, limits -------------------------------------------------
 /** Upstream stations publish hourly; 10 min keeps data fresh without hammering APIs. */
@@ -66,7 +66,7 @@ export const AI_RETRIES = 1;
 /** Molar volume of an ideal gas at 25 °C, 1 atm (L/mol), used for ppm/ppb -> µg/m³. */
 export const MOLAR_VOLUME_L = 24.45;
 /** Molecular weights (g/mol). */
-export const MOLECULAR_WEIGHT = { no2: 46.01, o3: 48.0, so2: 64.07, co: 28.01 } as const;
+export const MOLECULAR_WEIGHT = { no2: 46.01, o3: 48.0, so2: 64.07, co: 28.01, nh3: 17.03 } as const;
 /**
  * Urban ambient CO is essentially never below ~100 µg/m³ (~0.1 ppm, global background).
  * Live OpenAQ data labels CO mg/m³ values as "µg/m³" and ppm values as "ppb"; anything

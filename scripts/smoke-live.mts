@@ -21,7 +21,7 @@ const timed = async <T,>(fn: () => Promise<T>): Promise<[T, number]> => {
   const value = await fn();
   return [value, Math.round(performance.now() - t)];
 };
-const describe = (s: AQSnapshot) => `${s.source} | ${s.station.name} | age ${ageMin(s.measuredAt)} min${s.stale ? " (STALE)" : ""} | AQI ${s.aqi} ${s.category} (${s.dominant})${s.history ? ` | ${s.history.length}h history` : ""}`;
+const describe = (s: AQSnapshot) => `${s.source} | ${s.station.name} | age ${ageMin(s.measuredAt)} min${s.stale ? " (STALE)" : ""} | AQI ${s.aqi} ${s.category} (${s.dominant})${s.provisional ? " (PROVISIONAL)" : ""}${s.history ? ` | ${s.history.length}h history` : ""}`;
 const countItems = (a: { routines: unknown[]; indoor: unknown[]; alternatives: unknown[] }) => `${a.routines.length}/${a.indoor.length}/${a.alternatives.length}`;
 let failures = 0;
 const fail = (msg: string) => {
@@ -53,6 +53,7 @@ async function direct(city: (typeof CITIES)[number]) {
   } catch {
     return fail("no live data from any source");
   }
+  console.log(`  Selected | ${describe(snapshot)}`);
   const [result, adviceMs] = await timed(() => getAdvice(snapshot, PROFILE, "en", hasMetro(loc)));
   console.log(`  Advice ${adviceMs} ms | by ${result.generatedBy} | items routines/indoor/alternatives ${countItems(result.advice)}`);
   if (result.generatedBy !== "gemini") fail("Gemini advice rejected or unavailable (see warnings above)");

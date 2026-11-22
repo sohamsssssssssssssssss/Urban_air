@@ -1,3 +1,4 @@
+import { HISTORY_HOURS, HOUR_MS } from "../constants";
 import { CATEGORIES, POLLUTANTS, type AqiCategory, type Concentrations, type Pollutant, type SubIndices } from "./types";
 
 /** Index value at the top of each category band: Good..Severe. */
@@ -7,8 +8,6 @@ const INDEX_UPPER = [50, 100, 200, 300, 400, 500] as const;
  * CPCB National AQI breakpoints: upper concentration of each band (µg/m³; CO in mg/m³).
  * Source: CPCB "National Air Quality Index" (2014). CPCB leaves the Severe band open-ended;
  * we extrapolate it with the width of the Very Poor band and cap the index at 500.
- * Note: CPCB specifies 24 h (8 h for CO/O3) averages; we apply them to the latest hourly
- * reading, so the result is labelled an estimate in the UI.
  */
 const BREAKPOINTS: Record<Pollutant, readonly number[]> = {
   pm25: [30, 60, 90, 120, 250, 380],
@@ -17,9 +16,40 @@ const BREAKPOINTS: Record<Pollutant, readonly number[]> = {
   o3: [50, 100, 168, 208, 748, 1288],
   co: [1, 2, 10, 17, 34, 51],
   so2: [40, 80, 380, 800, 1600, 2400],
+  nh3: [200, 400, 800, 1200, 1800, 2400],
 };
 
 const UG_PER_MG = 1000;
+const MIN_24H_SAMPLES = 16;
+const SHORT_WINDOW_HOURS = 8;
+
+/** Uses distinct completed hours, anchored at this sensor's latest measurement end. */
+export function aqiConcentration(
+  pollutant: Pollutant,
+  history: ReadonlyArray<{ at: string; value: number }>,
+  end: number,
+): number | undefined {
+  const hours = new Map<number, number>();
+  for (const { at, value } of history) {
+    const elapsed = end - Date.parse(at);
+    if (elapsed >= HOUR_MS && elapsed <= HISTORY_HOURS * HOUR_MS && Number.isFinite(value) && value >= 0) {
+      hours.set(Math.floor(elapsed / HOUR_MS), value);
+    }
+  }
+  if (pollutant === "co" || pollutant === "o3") {
+    let max: number | undefined;
+    for (let start = 1; start <= HISTORY_HOURS - SHORT_WINDOW_HOURS + 1; start++) {
+      const window = Array.from({ length: SHORT_WINDOW_HOURS }, (_, i) => hours.get(start + i));
+      if (window.every((value) => value !== undefined)) {
+        const mean = window.reduce((sum, value) => sum + value, 0) / SHORT_WINDOW_HOURS;
+        max = Math.max(max ?? mean, mean);
+      }
+    }
+    return max;
+  }
+  if (hours.size < MIN_24H_SAMPLES) return undefined;
+  return [...hours.values()].reduce((sum, value) => sum + value, 0) / hours.size;
+}
 
 /**
  * NAQI sub-index for one pollutant via linear interpolation within its band.
@@ -97,4 +127,5 @@ export const POLLUTANT_LABEL: Record<Pollutant, string> = {
   o3: "O₃",
   so2: "SO₂",
   co: "CO",
+  nh3: "NH₃",
 };
