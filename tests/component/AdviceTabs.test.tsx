@@ -1,0 +1,47 @@
+// @vitest-environment jsdom
+import { cleanup, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it } from "vitest";
+import { axe } from "vitest-axe";
+import AdviceTabs from "@/components/AdviceTabs";
+import { ruleBasedAdvice } from "@/lib/ai/fallback";
+import { buildFacts } from "@/lib/impact/facts";
+import { profile, snapshot } from "../fixtures/data";
+
+afterEach(cleanup);
+const advice = ruleBasedAdvice(snapshot, buildFacts(snapshot, profile, true));
+
+describe("AdviceTabs", () => {
+  it("renders why/impact/personalisation with no axe violations", async () => {
+    const { container } = render(<AdviceTabs advice={advice} generatedBy="rules" language="en" />);
+    expect(screen.getByText(/Rule-based plan/)).toBeTruthy();
+    expect(within(screen.getByRole("tabpanel")).getAllByText("Impact").length).toBe(advice.routines.length);
+    expect((await axe(container)).violations).toEqual([]);
+  });
+
+  it("supports arrow, Home and End keys between tabs", async () => {
+    const user = userEvent.setup();
+    render(<AdviceTabs advice={advice} generatedBy="gemini" language="en" />);
+    const [routines, indoor, alternatives] = screen.getAllByRole("tab");
+    await user.click(routines!);
+    await user.keyboard("{ArrowRight}");
+    expect(indoor!.getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(indoor);
+    expect(screen.getByRole("tabpanel").textContent).toContain("purifier");
+    await user.keyboard("{End}");
+    expect(alternatives!.getAttribute("aria-selected")).toBe("true");
+    await user.keyboard("{ArrowRight}");
+    expect(routines!.getAttribute("aria-selected")).toBe("true");
+    await user.keyboard("{ArrowLeft}");
+    expect(alternatives!.getAttribute("aria-selected")).toBe("true");
+    await user.keyboard("{Home}");
+    expect(routines!.getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("renders model text as plain text, never HTML", () => {
+    const evil = { ...advice, summary: "<img src=x onerror=alert(1)>" };
+    const { container } = render(<AdviceTabs advice={evil} generatedBy="gemini" language="hi" />);
+    expect(container.querySelector("img")).toBeNull();
+    expect(screen.getByText("<img src=x onerror=alert(1)>")).toBeTruthy();
+  });
+});
