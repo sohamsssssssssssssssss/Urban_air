@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { categoryFor, computeAqi, subIndex } from "@/lib/aq/naqi";
+import { aqiFromSubIndices, categoryFor, computeAqi, subIndex, subIndicesFor } from "@/lib/aq/naqi";
 import type { Pollutant } from "@/lib/aq/types";
 
 describe("categoryFor", () => {
@@ -46,4 +46,12 @@ describe("computeAqi", () => {
     expect(computeAqi({ pm25: 20, pm10: 300 })?.dominant).toBe("pm10");
   });
   it("requires a particulate reading", () => expect(computeAqi({ no2: 500, o3: 80 })).toBeNull());
+});
+
+describe("sub-index helpers", () => {
+  it("computes sub-indices for measured pollutants only", () => expect(subIndicesFor({ pm25: 60, no2: 80 })).toEqual({ pm25: 100, no2: 100 }));
+  it("takes AQI from published sub-indices (CPCB) and requires PM", () => {
+    expect(aqiFromSubIndices({ pm25: 222, pm10: 135, co: 12 })).toEqual({ aqi: 222, category: "Poor", dominant: "pm25" });
+    expect(aqiFromSubIndices({ co: 300 })).toBeNull();
+  });
 });

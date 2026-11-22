@@ -4,6 +4,16 @@ export type Pollutant = (typeof POLLUTANTS)[number];
 /** Pollutant concentrations, all normalised to µg/m³. */
 export type Concentrations = Partial<Record<Pollutant, number>>;
 
+/** NAQI sub-index per pollutant (0-500). */
+export type SubIndices = Partial<Record<Pollutant, number>>;
+
+/** One hourly PM2.5 average (µg/m³) from the station's recent history. */
+export interface HourlyPoint {
+  /** ISO start of the hour. */
+  at: string;
+  pm25: number;
+}
+
 export const CATEGORIES = ["Good", "Satisfactory", "Moderate", "Poor", "Very Poor", "Severe"] as const;
 export type AqiCategory = (typeof CATEGORIES)[number];
 
@@ -13,13 +23,19 @@ export type AqSource = "OpenAQ" | "CPCB";
 export interface StationReading {
   source: AqSource;
   station: { id: string; name: string };
+  /** Measured concentrations (OpenAQ). Empty for CPCB, which publishes sub-indices only. */
   pollutants: Concentrations;
+  /** Sub-indices published by the source (CPCB). Computed from `pollutants` otherwise. */
+  subIndices?: SubIndices;
+  /** Last ~24 h of hourly PM2.5 (OpenAQ only), used for data-driven timing advice. */
+  history?: HourlyPoint[];
   /** ISO timestamp of the measurement. */
   measuredAt: string;
 }
 
 /** Normalised, source-agnostic snapshot that the UI and AI are grounded on. */
 export interface AQSnapshot extends StationReading {
+  subIndices: SubIndices;
   aqi: number;
   category: AqiCategory;
   dominant: Pollutant;

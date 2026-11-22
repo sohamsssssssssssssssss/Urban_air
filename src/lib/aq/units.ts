@@ -1,4 +1,4 @@
-import { MOLAR_VOLUME_L, MOLECULAR_WEIGHT } from "../constants";
+import { CO_MIN_PLAUSIBLE_UGM3, MOLAR_VOLUME_L, MOLECULAR_WEIGHT } from "../constants";
 import { POLLUTANTS, type Pollutant } from "./types";
 
 const PPB_PER_PPM = 1000;
@@ -16,9 +16,16 @@ export function asPollutant(name: string): Pollutant | undefined {
  * @param pollutant - pollutant key
  * @param value - raw value
  * @param units - upstream unit string, e.g. "µg/m³", "ppm", "ppb", "mg/m³"
- * @returns µg/m³, or undefined when the unit is unknown or the value is invalid
+ * @returns µg/m³, or undefined when the unit is unknown, the value invalid, or physically implausible
  */
 export function toUgM3(pollutant: Pollutant, value: number, units: string): number | undefined {
+  const ug = convert(pollutant, value, units);
+  // Live OpenAQ data mislabels CO units (mg/m³ as "µg/m³", ppm as "ppb"): drop, never reinterpret.
+  if (ug !== undefined && pollutant === "co" && ug < CO_MIN_PLAUSIBLE_UGM3) return undefined;
+  return ug;
+}
+
+function convert(pollutant: Pollutant, value: number, units: string): number | undefined {
   if (!Number.isFinite(value) || value < 0) return undefined;
   const u = units.toLowerCase().replace(/\s/g, "");
   if (u === "µg/m³" || u === "μg/m³" || u === "ug/m3" || u === "µg/m3") return value;

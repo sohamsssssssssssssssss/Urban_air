@@ -1,4 +1,4 @@
-import { CATEGORIES, POLLUTANTS, type AqiCategory, type Concentrations, type Pollutant } from "./types";
+import { CATEGORIES, POLLUTANTS, type AqiCategory, type Concentrations, type Pollutant, type SubIndices } from "./types";
 
 /** Index value at the top of each category band: Good..Severe. */
 const INDEX_UPPER = [50, 100, 200, 300, 400, 500] as const;
@@ -58,32 +58,37 @@ export interface AqiResult {
 }
 
 /**
- * Overall AQI = max sub-index. Requires at least one particulate reading, since
- * PM drives winter smog and NAQI requires PM2.5 or PM10.
+ * Sub-indices for every measured pollutant.
  * @param pollutants - concentrations in µg/m³
- * @returns AQI result, or null when no PM reading is present
  */
-export function computeAqi(pollutants: Concentrations): AqiResult | null {
-  if (pollutants.pm25 === undefined && pollutants.pm10 === undefined) return null;
-  let best: { aqi: number; dominant: Pollutant } = { aqi: -1, dominant: "pm25" };
+export function subIndicesFor(pollutants: Concentrations): SubIndices {
+  const out: SubIndices = {};
   for (const p of POLLUTANTS) {
     const c = pollutants[p];
-    if (c === undefined) continue;
-    const idx = subIndex(p, c);
-    if (idx > best.aqi) best = { aqi: idx, dominant: p };
+    if (c !== undefined) out[p] = subIndex(p, c);
+  }
+  return out;
+}
+
+/**
+ * Overall AQI = max sub-index. Requires a particulate sub-index, since PM drives winter smog
+ * and CPCB's NAQI requires PM2.5 or PM10.
+ * @returns AQI result, or null when no PM sub-index is present
+ */
+export function aqiFromSubIndices(sub: SubIndices): AqiResult | null {
+  if (sub.pm25 === undefined && sub.pm10 === undefined) return null;
+  let best: { aqi: number; dominant: Pollutant } = { aqi: -1, dominant: "pm25" };
+  for (const p of POLLUTANTS) {
+    const idx = sub[p];
+    if (idx !== undefined && idx > best.aqi) best = { aqi: idx, dominant: p };
   }
   return { ...best, category: categoryFor(best.aqi) };
 }
 
-/** Official CPCB health statements per category. */
-export const HEALTH_IMPACT: Record<AqiCategory, string> = {
-  Good: "Minimal impact.",
-  Satisfactory: "Minor breathing discomfort to sensitive people.",
-  Moderate: "Breathing discomfort to people with lung or heart disease, children and older adults.",
-  Poor: "Breathing discomfort to most people on prolonged exposure.",
-  "Very Poor": "Respiratory illness on prolonged exposure.",
-  Severe: "Affects healthy people and seriously impacts those with existing diseases.",
-};
+/** Convenience: AQI straight from concentrations (µg/m³). */
+export function computeAqi(pollutants: Concentrations): AqiResult | null {
+  return aqiFromSubIndices(subIndicesFor(pollutants));
+}
 
 export const POLLUTANT_LABEL: Record<Pollutant, string> = {
   pm25: "PM2.5",

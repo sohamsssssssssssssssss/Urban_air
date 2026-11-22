@@ -1,10 +1,10 @@
 import "server-only";
-import { AQ_CACHE_TTL_MS, COORD_CACHE_DECIMALS, STALE_AFTER_MS } from "../constants";
+import { AQ_CACHE_TTL_MS, CLOCK_SKEW_MS, COORD_CACHE_DECIMALS, MAX_READING_AGE_MS, STALE_AFTER_MS } from "../constants";
 import { createTtlCache } from "../cache";
 import { env } from "../env";
 import { AQUnavailableError } from "../errors";
 import { nearestCity } from "../cities";
-import { computeAqi } from "./naqi";
+import { aqiFromSubIndices, subIndicesFor } from "./naqi";
 import { fetchCPCB } from "./cpcb";
 import { fetchOpenAQ } from "./openaq";
 import type { AQSnapshot, GeoQuery, StationReading } from "./types";
@@ -15,12 +15,15 @@ const cache = createTtlCache<AQSnapshot>(AQ_CACHE_TTL_MS);
 
 /**
  * Turns a raw station reading into the normalised snapshot (NAQI + staleness).
- * @returns snapshot, or null when the reading has no particulate data
+ * @returns snapshot, or null when there is no particulate data or the reading is too old / in the future
  */
 export function toSnapshot(reading: StationReading, now = Date.now()): AQSnapshot | null {
-  const result = computeAqi(reading.pollutants);
+  const age = now - Date.parse(reading.measuredAt);
+  if (!(age <= MAX_READING_AGE_MS && age >= -CLOCK_SKEW_MS)) return null;
+  const subIndices = reading.subIndices ?? subIndicesFor(reading.pollutants);
+  const result = aqiFromSubIndices(subIndices);
   if (!result) return null;
-  return { ...reading, ...result, fetchedAt: new Date(now).toISOString(), stale: now - Date.parse(reading.measuredAt) > STALE_AFTER_MS };
+  return { ...reading, subIndices, ...result, fetchedAt: new Date(now).toISOString(), stale: age > STALE_AFTER_MS };
 }
 
 async function loadFromSources(query: GeoQuery): Promise<AQSnapshot> {
