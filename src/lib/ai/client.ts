@@ -10,6 +10,10 @@ let client: GoogleGenAI | null | undefined;
  * Pinned to v1beta: JSON mode with responseJsonSchema is rejected on v1 (verified against the live API).
  */
 export function getGemini(): GoogleGenAI | null {
-  if (client === undefined) client = env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: env.GEMINI_API_KEY, httpOptions: { apiVersion: GEMINI_API_VERSION } }) : null;
+  if (client === undefined) {
+    client = env.GEMINI_API_KEY
+      ? new GoogleGenAI({ apiKey: env.GEMINI_API_KEY, httpOptions: { apiVersion: GEMINI_API_VERSION, retryOptions: { attempts: 1 } } })
+      : null;
+  }
   return client;
 }

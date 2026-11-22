@@ -3,11 +3,13 @@
  * Run: npx tsx --env-file=.env.local --conditions=react-server scripts/capture-fixtures.mts
  */
 import { writeFileSync } from "node:fs";
-import { GoogleGenAI } from "@google/genai";
+import { getGemini } from "../src/lib/ai/client";
 import { adviceSystemPrompt, buildContext } from "../src/lib/ai/prompts";
 import { modelAdviceJsonSchema } from "../src/lib/ai/schema";
 import { toSnapshot } from "../src/lib/aq";
 import { fetchOpenAQ } from "../src/lib/aq/openaq";
+import { GEMINI_MODEL } from "../src/lib/constants";
+import { env } from "../src/lib/env";
 import { buildFacts } from "../src/lib/impact/facts";
 
 const OUT = "tests/fixtures/live";
@@ -16,18 +18,21 @@ const save = (name: string, data: unknown) => writeFileSync(`${OUT}/${name}.json
 const get = async (url: string, headers: Record<string, string> = {}) => (await fetch(url, { headers })).json();
 
 const [lat, lon] = [28.61, 77.21];
-const locs = await get(`https://api.openaq.org/v3/locations?coordinates=${lat},${lon}&radius=25000&limit=100`, H);
-type Loc = { id: number; distance: number; datetimeLast?: { utc: string } | null; sensors: unknown[]; name: string; locality: string | null };
 const now = Date.now();
+const reading = await fetchOpenAQ({ lat, lon }, process.env.OPENAQ_API_KEY ?? "", now);
+const locs = await get(`https://api.openaq.org/v3/locations?coordinates=${lat},${lon}&radius=25000&limit=100&monitor=${reading.sensorType === "reference"}`, H);
+type Loc = { id: number; distance: number; datetimeLast?: { utc: string } | null; sensors: Array<{ id: number; parameter: { name: string } }>; name: string; locality: string | null; isMonitor: boolean };
 const all = locs.results as Loc[];
 const fresh = all.filter((l) => l.datetimeLast && now - Date.parse(l.datetimeLast.utc) < 3 * 3600e3).sort((a, b) => a.distance - b.distance).slice(0, 3);
 const dead = all.filter((l) => !l.datetimeLast || now - Date.parse(l.datetimeLast.utc) > 365 * 86400e3).slice(0, 2);
-const keep = (l: Loc) => ({ id: l.id, name: l.name, locality: l.locality, distance: l.distance, datetimeLast: l.datetimeLast, sensors: l.sensors });
+const keep = (l: Loc) => ({ id: l.id, name: l.name, locality: l.locality, distance: l.distance, isMonitor: l.isMonitor, datetimeLast: l.datetimeLast, sensors: l.sensors });
 save("openaq-locations-delhi", { capturedAt: new Date(now).toISOString(), results: [...dead, ...fresh].map(keep) });
 for (const l of fresh) save(`openaq-latest-${l.id}`, { results: (await get(`https://api.openaq.org/v3/locations/${l.id}/latest`, H)).results.map((r: { datetime: unknown; value: number; sensorsId: number }) => ({ datetime: r.datetime, value: r.value, sensorsId: r.sensorsId })) });
 
-const reading = await fetchOpenAQ({ lat, lon }, process.env.OPENAQ_API_KEY ?? "", now);
-const pm25Id = (fresh.find((l) => `openaq:${l.id}` === reading.station.id)?.sensors as Array<{ id: number; parameter: { name: string } }>).find((s) => s.parameter.name === "pm25")?.id;
+const pickedId = reading.station.id.replace("openaq:", "");
+const picked: Loc = all.find((l) => String(l.id) === pickedId) ?? await get(`https://api.openaq.org/v3/locations/${pickedId}`, H).then((body) => body.results[0]);
+const pm25Id = picked.sensors.find((s) => s.parameter.name === "pm25")?.id;
+if (pm25Id === undefined) throw new Error("selected station does not report PM2.5");
 const from = new Date(now - 24 * 3600e3).toISOString();
 const hours = await get(`https://api.openaq.org/v3/sensors/${pm25Id}/hours?datetime_from=${from}&datetime_to=${new Date(now).toISOString()}&limit=48`, H);
 save(`openaq-hours-${pm25Id}`, { results: hours.results.map((r: { value: number; period: { datetimeFrom: unknown } }) => ({ value: r.value, period: { datetimeFrom: r.period.datetimeFrom } })) });
@@ -40,11 +45,12 @@ const snapshot = toSnapshot(reading, now);
 if (!snapshot) throw new Error("no snapshot");
 const profile = { kids: true, elderly: false, respiratory: false, pets: false, commuteMode: "car", commuteKm: 12, workStartHour: 9, workEndHour: 18, ownsPurifier: false, budget: "low" } as const;
 save("snapshot-delhi", snapshot);
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY, httpOptions: { apiVersion: "v1beta" } });
+const ai = getGemini();
+if (!ai) throw new Error("GEMINI_API_KEY is required to capture Gemini fixtures");
 for (const lang of ["en", "hi"] as const) {
   const facts = buildFacts(snapshot, profile, true, lang);
   const res = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: env.GEMINI_MODEL || GEMINI_MODEL,
     contents: `CONTEXT: ${buildContext(snapshot, profile, facts)}`,
     config: { systemInstruction: adviceSystemPrompt(lang), responseMimeType: "application/json", responseJsonSchema: modelAdviceJsonSchema, maxOutputTokens: 4096, temperature: 0.3, thinkingConfig: { thinkingBudget: 0 } },
   });

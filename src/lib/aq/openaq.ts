@@ -1,10 +1,10 @@
 import "server-only";
 import { z } from "zod";
-import { CLOCK_SKEW_MS, HISTORY_HOURS, HOUR_MS, MAX_READING_AGE_MS, OPENAQ_BASE_URL, OPENAQ_CANDIDATES, OPENAQ_LOCATION_LIMIT, OPENAQ_RADIUS_M, STALE_AFTER_MS } from "../constants";
+import { CLOCK_SKEW_MS, HISTORY_HOURS, HOUR_MS, MAX_READING_AGE_MS, OPENAQ_BASE_URL, OPENAQ_CANDIDATES, OPENAQ_DISCOVERY_TIMEOUT_MS, OPENAQ_LOCATION_LIMIT, OPENAQ_RADIUS_M, STALE_AFTER_MS } from "../constants";
 import { UpstreamError } from "../errors";
 import { fetchJson } from "../fetchJson";
 import { aqiConcentration, subIndicesFor } from "./naqi";
-import type { Concentrations, GeoQuery, Pollutant, StationReading } from "./types";
+import type { Concentrations, GeoQuery, Pollutant, SensorType, StationReading } from "./types";
 import { asPollutant, toUgM3 } from "./units";
 
 const Sensor = z.object({ id: z.number(), parameter: z.object({ name: z.string(), units: z.string() }) });
@@ -15,6 +15,7 @@ const LocationsSchema = z.object({
       name: z.string().nullish(),
       locality: z.string().nullish(),
       distance: z.number().nullish(),
+      isMonitor: z.boolean().optional(),
       datetimeLast: z.object({ utc: z.string() }).nullish(),
       sensors: z.array(Sensor),
     }),
@@ -33,8 +34,8 @@ const usable = (iso: string, now: number) => {
   return Number.isFinite(t) && t <= now + CLOCK_SKEW_MS && now - t <= MAX_READING_AGE_MS;
 };
 
-async function readLocation(loc: Location, headers: Record<string, string>, now: number): Promise<Picked | null> {
-  const latest = await fetchJson("OpenAQ", `${OPENAQ_BASE_URL}/locations/${loc.id}/latest`, LatestSchema, headers);
+async function readLocation(loc: Location, sensorType: SensorType, headers: Record<string, string>, now: number, deadline: AbortSignal): Promise<Picked | null> {
+  const latest = await fetchJson("OpenAQ", `${OPENAQ_BASE_URL}/locations/${loc.id}/latest`, LatestSchema, headers, deadline);
   const sensors = new Map(loc.sensors.map((s) => [s.id, s.parameter]));
   // Sites often run duplicate sensors for one pollutant (e.g. µg/m³ and ppb): keep the freshest valid one.
   const best = new Map<Pollutant, LatestSensor>();
@@ -53,6 +54,7 @@ async function readLocation(loc: Location, headers: Record<string, string>, now:
   return {
     reading: {
       source: "OpenAQ",
+      sensorType,
       station: { id: `openaq:${loc.id}`, name: [loc.name, loc.locality].filter(Boolean).join(", ") || `OpenAQ #${loc.id}`, distanceM: loc.distance ?? undefined },
       pollutants,
       pm25MeasuredAt: pm25 && new Date(pm25.t).toISOString(),
@@ -80,7 +82,7 @@ async function readHistory(pollutant: Pollutant, sensor: LatestSensor, headers: 
 }
 
 /**
- * Nearest OpenAQ station with a recent particulate reading and hourly pollutant history.
+ * Prefer a reference monitor with usable particulate data within 25 km.
  * OpenAQ returns locations unordered and many have been offline for years, so we filter by
  * `datetimeLast`, sort by distance ourselves, and query the nearest few in parallel.
  * @param query - coordinates
@@ -89,16 +91,32 @@ async function readHistory(pollutant: Pollutant, sensor: LatestSensor, headers: 
  */
 export async function fetchOpenAQ({ lat, lon }: GeoQuery, apiKey: string, now = Date.now()): Promise<StationReading> {
   const headers = { "X-API-Key": apiKey };
+  const deadline = AbortSignal.timeout(OPENAQ_DISCOVERY_TIMEOUT_MS);
   const url = `${OPENAQ_BASE_URL}/locations?coordinates=${lat},${lon}&radius=${OPENAQ_RADIUS_M}&limit=${OPENAQ_LOCATION_LIMIT}`;
-  const { results } = await fetchJson("OpenAQ", url, LocationsSchema, headers);
-  const candidates = results
-    .filter((l) => l.datetimeLast && usable(l.datetimeLast.utc, now))
-    .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))
-    .slice(0, OPENAQ_CANDIDATES);
+  async function find(monitor: boolean) {
+    const candidates: Location[] = [];
+    for (let page = 1; !deadline.aborted; page++) {
+      const { results } = await fetchJson("OpenAQ", `${url}&monitor=${monitor}&page=${page}`, LocationsSchema, headers, deadline);
+      candidates.push(...results.filter((l) => (l.isMonitor ?? monitor) === monitor && (l.distance ?? 0) <= OPENAQ_RADIUS_M
+        && l.datetimeLast && usable(l.datetimeLast.utc, now)
+        && l.sensors.some(({ parameter }) => ["pm25", "pm10"].includes(asPollutant(parameter.name) ?? ""))));
+      if (results.length < OPENAQ_LOCATION_LIMIT) break;
+    }
+    candidates.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
 
-  const settled = await Promise.allSettled(candidates.map((loc) => readLocation(loc, headers, now)));
-  const picked = settled.flatMap((s) => (s.status === "fulfilled" && s.value ? [s.value] : []));
-  const best = picked.find((p) => now - Date.parse(p.reading.measuredAt) <= STALE_AFTER_MS) ?? picked[0];
+    const sensorType = monitor ? "reference" : "low-cost";
+    let stale: Picked | undefined;
+    for (let i = 0; i < candidates.length && !deadline.aborted; i += OPENAQ_CANDIDATES) {
+      const batch = candidates.slice(i, i + OPENAQ_CANDIDATES);
+      const settled = await Promise.allSettled(batch.map((loc) => readLocation(loc, sensorType, headers, now, deadline)));
+      const picked = settled.flatMap((s) => (s.status === "fulfilled" && s.value ? [s.value] : []));
+      const fresh = picked.find((p) => now - Date.parse(p.reading.measuredAt) < STALE_AFTER_MS);
+      if (fresh) return fresh;
+      stale ??= picked[0];
+    }
+    return stale;
+  }
+  const best = await find(true) ?? (deadline.aborted ? undefined : await find(false));
   if (!best) throw new UpstreamError("OpenAQ", "no station with recent particulate data nearby");
   const aqConcentrations: Concentrations = {};
   let history: StationReading["history"];

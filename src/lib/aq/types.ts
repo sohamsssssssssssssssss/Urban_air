@@ -18,10 +18,12 @@ export const CATEGORIES = ["Good", "Satisfactory", "Moderate", "Poor", "Very Poo
 export type AqiCategory = (typeof CATEGORIES)[number];
 
 export type AqSource = "OpenAQ" | "CPCB";
+export type SensorType = "reference" | "low-cost";
 
 /** One station's latest reading, as returned by a source adapter. */
 export interface StationReading {
   source: AqSource;
+  sensorType: SensorType;
   station: { id: string; name: string; distanceM?: number };
   /** Latest hourly concentrations, when available for this station. */
   pollutants: Concentrations;

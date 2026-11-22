@@ -85,6 +85,7 @@ const en = {
     aqiMethod: "AQI (24h, official method)",
     provisional: "Provisional AQI",
     provisionalDetail: "Hourly history is incomplete. Some sub-indices use the latest reading.",
+    lowCost: "Low-cost sensor reading.",
     lastHour: "Now (last hour) PM2.5",
     noHourlyPm25: "Hourly PM2.5 unavailable for this station.",
     dominant: (pollutant: string) => `Main pollutant ${pollutant}.`,

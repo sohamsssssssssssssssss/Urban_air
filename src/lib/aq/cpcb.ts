@@ -68,7 +68,7 @@ export async function fetchCpcbStations({ lat, lon, city }: GeoQuery, apiKey: st
     .sort((a, b) => Number(a.age >= STALE_AFTER_MS) - Number(b.age >= STALE_AFTER_MS)
       || (a.distanceM ?? Infinity) - (b.distanceM ?? Infinity) || a.age - b.age)
     .map(({ name, distanceM, subIndices, measuredAt }) => (
-      { source: "CPCB", station: { id: `cpcb:${name}`, name, distanceM }, pollutants: {}, subIndices, measuredAt }
+      { source: "CPCB", sensorType: "reference", station: { id: `cpcb:${name}`, name, distanceM }, pollutants: {}, subIndices, measuredAt }
     ));
 }
 

@@ -10,11 +10,13 @@ import { UpstreamError } from "./errors";
  * @param url - absolute URL
  * @param schema - expected response shape
  * @param headers - request headers (API keys)
+ * @param deadline - optional deadline shared across requests
  */
-export async function fetchJson<S extends z.ZodType>(source: string, url: string, schema: S, headers: Record<string, string> = {}): Promise<z.infer<S>> {
+export async function fetchJson<S extends z.ZodType>(source: string, url: string, schema: S, headers: Record<string, string> = {}, deadline?: AbortSignal): Promise<z.infer<S>> {
+  const timeout = AbortSignal.timeout(FETCH_TIMEOUT_MS);
   let res: Response;
   try {
-    res = await fetch(url, { headers: { Accept: "application/json", ...headers }, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" });
+    res = await fetch(url, { headers: { Accept: "application/json", ...headers }, signal: deadline ? AbortSignal.any([timeout, deadline]) : timeout, cache: "no-store" });
   } catch (err) {
     throw new UpstreamError(source, err instanceof Error ? err.name : "network error");
   }

@@ -49,6 +49,7 @@ export const hi: UiStrings = {
     aqiMethod: "AQI (24 घंटे, आधिकारिक पद्धति)",
     provisional: "अस्थायी AQI",
     provisionalDetail: "घंटेवार डेटा अधूरा है। कुछ उप-सूचकांक सबसे हाल की रीडिंग पर आधारित हैं।",
+    lowCost: "कम लागत वाले सेंसर की रीडिंग।",
     lastHour: "अभी (पिछले घंटे का) PM2.5",
     noHourlyPm25: "इस स्टेशन के लिए घंटेवार PM2.5 उपलब्ध नहीं है।",
     dominant: (pollutant: string) => `मुख्य प्रदूषक ${pollutant}।`,

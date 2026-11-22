@@ -24,9 +24,15 @@ const axeScan = (page: Page) => new AxeBuilder({ page }).withTags(["wcag2a", "wc
 
 test("onboarding -> AQI card -> three tabs -> chat reply, accessible throughout", async ({ page }) => {
   await stubApi(page);
+  const aiCalls: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (path === "/api/advice" || path === "/api/chat") aiCalls.push(path);
+  });
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "SmogSense" })).toBeVisible();
   expect((await axeScan(page)).violations).toEqual([]);
+  expect(aiCalls).toEqual([]);
 
   await page.getByLabel("City").selectOption("Delhi");
   await page.getByLabel("Children").check();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
-import { CHAT_MAX_CHARS, CHAT_MAX_HISTORY } from "@/lib/constants";
+import { CHAT_MAX_CHARS, CHAT_MAX_HISTORY, CHAT_MAX_TURN_CHARS } from "@/lib/constants";
 import { UI, errorMessage, type Language } from "@/lib/i18n";
 import type { Location, UserProfile } from "@/lib/profile";
 import type { ChatTurn } from "@/lib/requests";
@@ -26,7 +26,7 @@ export default function ChatPanel({ location, profile, language }: ChatPanelProp
     e.preventDefault();
     const message = draft.trim();
     if (!message || busy) return;
-    const history = turns.slice(-CHAT_MAX_HISTORY);
+    const history = turns.slice(-CHAT_MAX_HISTORY).map(({ role, text }) => ({ role, text: text.slice(0, CHAT_MAX_TURN_CHARS) }));
     setTurns((prev) => [...prev, { role: "user", text: message }, { role: "model", text: "" }]);
     setDraft("");
     setError("");

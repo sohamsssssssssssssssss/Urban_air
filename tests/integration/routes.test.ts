@@ -93,10 +93,16 @@ describe("API routes", () => {
     it("400 when the message exceeds 500 characters", async () => {
       expect((await chat(post("/api/chat", { ...body, message: "a".repeat(501) }))).status).toBe(400);
     });
-    it("503 when AI is unavailable", async () => {
+    it.each([429, 503])("200 with grounded plain text when Gemini returns %i", async (status) => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      gemini = { models: { generateContentStream } };
+      generateContentStream.mockRejectedValue({ status });
       const res = await chat(post("/api/chat", body));
-      expect(res.status).toBe(503);
-      expect((await res.json()).error.code).toBe("AI_UNAVAILABLE");
+      expect(res.status).toBe(200);
+      expect(res.headers.get("content-type")).toContain("text/plain");
+      const answer = await res.text();
+      expect(answer).toContain("AI temporarily busy, showing data-based guidance.");
+      expect(answer).toContain("AQI 374");
     });
   });
 });

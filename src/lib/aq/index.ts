@@ -44,17 +44,18 @@ async function loadFromSources(query: GeoQuery): Promise<AQSnapshot> {
   if (cpcb && !openAQ) return cpcb;
   if (!openAQ) throw new AQUnavailableError();
   if (cpcb && !cpcb.stale) {
+    if (openAQ.sensorType === "low-cost") return cpcb;
     const name = stationName(openAQ.station.name);
     const match = stations.find((s) => stationName(s.station.name) === name && now - Date.parse(s.measuredAt) < STALE_AFTER_MS);
     const sameStation = match && toSnapshot(match, now);
     if (sameStation) return { ...sameStation, pollutants: openAQ.pollutants, history: openAQ.history, pm25MeasuredAt: openAQ.pm25MeasuredAt };
-    if (cpcb.station.distanceM !== undefined && cpcb.station.distanceM <= (openAQ.station.distanceM ?? -1)) return cpcb;
+    if (openAQ.stale || (cpcb.station.distanceM !== undefined && cpcb.station.distanceM <= (openAQ.station.distanceM ?? Infinity))) return cpcb;
   }
   return openAQ;
 }
 
 /**
- * Prefer fresh CPCB at the same or a closer station, with OpenAQ otherwise.
+ * Prefer the nearest fresh reference monitor, using CPCB sub-indices for a shared station.
  * Cached for 10 minutes per ~1 km grid cell; concurrent identical requests share one fetch.
  * @param query - coordinates and optional city
  */

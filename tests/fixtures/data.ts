@@ -5,6 +5,7 @@ export const NOW = Date.parse("2026-11-22T12:00:00Z");
 
 export const snapshot: AQSnapshot = {
   source: "OpenAQ",
+  sensorType: "reference",
   station: { id: "openaq:8118", name: "Anand Vihar, Delhi" },
   pollutants: { pm25: 182, pm10: 310, no2: 64 },
   subIndices: { pm25: 374, pm10: 260, no2: 80 },

@@ -73,6 +73,7 @@ describe("getAdvice", () => {
     const { generatedBy, advice } = await advise("hi");
     expect(generatedBy).toBe("rules");
     expect(advice.summary).toContain("मध्यम");
+    expect(generateContent).toHaveBeenCalledTimes(1);
   });
 
   it("works with zero AI when no key is configured", async () => {
@@ -82,13 +83,18 @@ describe("getAdvice", () => {
     expect(advice.indoor.length).toBeGreaterThan(0);
   });
 
-  it("caches advice per reading + profile + language", async () => {
+  it("caches model calls across readings in the same NAQI band without returning stale facts", async () => {
     vi.resetModules();
     const { getAdvice } = await import("@/lib/ai/advisor");
     generateContent.mockResolvedValue({ text: geminiEn.text });
     await getAdvice(snapshot, profile, "en", true);
     await getAdvice(snapshot, profile, "en", true);
+    const updated = await getAdvice({ ...snapshot, aqi: 199, measuredAt: "2026-11-22T13:30:00Z" }, profile, "en", true);
+    expect(updated.generatedBy).toBe("rules");
+    expect(updated.advice.summary).toContain("AQI 199");
+    expect(generateContent).toHaveBeenCalledTimes(1);
+    await getAdvice({ ...snapshot, aqi: 201, category: "Poor" }, profile, "en", true);
     await getAdvice(snapshot, { ...profile, pets: true }, "en", true);
-    expect(generateContent).toHaveBeenCalledTimes(2);
+    expect(generateContent).toHaveBeenCalledTimes(3);
   });
 });

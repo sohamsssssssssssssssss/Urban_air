@@ -61,6 +61,7 @@ function Reading({ snapshot: s, language }: { snapshot: AQSnapshot; language: La
         {t.meta(s.station.name, formatIST(s.measuredAt), s.source)} {t.dominant(POLLUTANT_LABEL[s.dominant])}
       </p>
       {s.provisional && <p className="mt-2 text-sm text-amber-900">{t.provisionalDetail}</p>}
+      {s.sensorType === "low-cost" && <p className="mt-2 text-sm text-slate-700">{t.lowCost}</p>}
       <p className="mt-3 text-sm text-slate-800">
         <strong>{t.lastHour}</strong>{" · "}
         {s.pollutants.pm25 !== undefined

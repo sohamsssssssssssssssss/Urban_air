@@ -11,13 +11,17 @@ export const HOUR_MS = 60 * MINUTE_MS;
 /** Upstream stations publish hourly; 10 min keeps data fresh without hammering APIs. */
 export const AQ_CACHE_TTL_MS = 10 * MINUTE_MS;
 /** Advice only changes when the reading or profile changes. */
-export const ADVICE_CACHE_TTL_MS = 15 * MINUTE_MS;
+export const ADVICE_CACHE_TTL_MS = 30 * MINUTE_MS;
 /** Bound memory use of each in-process cache. */
 export const CACHE_MAX_ENTRIES = 500;
 /** Per-upstream fetch timeout. */
 export const FETCH_TIMEOUT_MS = 5_000;
+/** Limit station discovery so a slow provider leaves time for history and advice. */
+export const OPENAQ_DISCOVERY_TIMEOUT_MS = 9_000;
 /** Gemini call timeout (structured JSON generation takes longer than a data fetch). */
 export const AI_TIMEOUT_MS = 20_000;
+/** Combined budget for advice generation and any validation retry within a 30 s route. */
+export const ADVICE_AI_TIMEOUT_MS = 14_000;
 /** A reading older than this is flagged stale in the UI. */
 export const STALE_AFTER_MS = 3 * HOUR_MS;
 /** Older readings are rejected outright (many OpenAQ sites stopped reporting years ago). */
@@ -34,6 +38,7 @@ export const RATE_LIMIT_MAX_KEYS = 10_000;
 
 // ---- Input caps ----------------------------------------------------------------
 export const CHAT_MAX_CHARS = 500;
+export const CHAT_MAX_TURN_CHARS = CHAT_MAX_CHARS * 2;
 export const CHAT_MAX_HISTORY = 6;
 export const COMMUTE_MAX_KM = 100;
 
@@ -54,7 +59,7 @@ export const IST_OFFSET = "+05:30";
 export const IST_OFFSET_MINUTES = 330;
 
 // ---- Gemini --------------------------------------------------------------------
-export const GEMINI_MODEL = "gemini-2.5-flash";
+export const GEMINI_MODEL = "gemini-2.5-flash-lite";
 /** JSON mode (responseMimeType + responseJsonSchema) is rejected on API v1; verified live. */
 export const GEMINI_API_VERSION = "v1beta";
 export const ADVICE_MAX_OUTPUT_TOKENS = 4_096; // Hindi output uses ~2-3x the tokens of English

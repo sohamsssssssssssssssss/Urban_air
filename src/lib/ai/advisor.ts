@@ -2,7 +2,8 @@ import "server-only";
 import { createHash } from "node:crypto";
 import type { AQSnapshot } from "../aq/types";
 import { createTtlCache } from "../cache";
-import { ADVICE_CACHE_TTL_MS, ADVICE_MAX_OUTPUT_TOKENS, AI_RETRIES, AI_TEMPERATURE, AI_TIMEOUT_MS, GEMINI_MODEL } from "../constants";
+import { ADVICE_AI_TIMEOUT_MS, ADVICE_CACHE_TTL_MS, ADVICE_MAX_OUTPUT_TOKENS, AI_RETRIES, AI_TEMPERATURE, GEMINI_MODEL } from "../constants";
+import { env } from "../env";
 import { buildFacts } from "../impact/facts";
 import type { Language, UserProfile } from "../profile";
 import { getGemini } from "./client";
@@ -16,7 +17,7 @@ export interface AdviceResult {
   generatedBy: "gemini" | "rules";
 }
 
-const cache = createTtlCache<AdviceResult>(ADVICE_CACHE_TTL_MS);
+const cache = createTtlCache<{ context: string; advice: Advice | null }>(ADVICE_CACHE_TTL_MS);
 
 /**
  * Validates model output against the facts. Returns null (forcing retry/fallback) when the model
@@ -42,46 +43,50 @@ export function mergeModelAdvice(model: ModelAdvice, facts: Fact[], s: AQSnapsho
   return ungroundedNumbers(prose, context).length === 0 ? advice : null;
 }
 
-async function generateWithGemini(s: AQSnapshot, profile: UserProfile, facts: Fact[], language: Language): Promise<Advice | null> {
+async function generateWithGemini(s: AQSnapshot, facts: Fact[], context: string, language: Language): Promise<Advice | null> {
   const ai = getGemini();
   if (!ai) return null;
-  const context = buildContext(s, profile, facts);
-  for (let attempt = 0; attempt <= AI_RETRIES; attempt++) {
+  const deadline = AbortSignal.timeout(ADVICE_AI_TIMEOUT_MS);
+  for (let attempt = 0; attempt <= AI_RETRIES && !deadline.aborted; attempt++) {
+    const res = await ai.models.generateContent({
+      model: env.GEMINI_MODEL || GEMINI_MODEL,
+      contents: `CONTEXT: ${context}`,
+      config: {
+        systemInstruction: adviceSystemPrompt(language),
+        responseMimeType: "application/json",
+        responseJsonSchema: modelAdviceJsonSchema,
+        maxOutputTokens: ADVICE_MAX_OUTPUT_TOKENS,
+        temperature: AI_TEMPERATURE,
+        thinkingConfig: { thinkingBudget: 0 },
+        abortSignal: deadline,
+      },
+    }).catch(() => {
+      console.warn("Gemini advice request failed");
+      return null;
+    });
+    if (!res) return null;
     try {
-      const res = await ai.models.generateContent({
-        model: GEMINI_MODEL,
-        contents: `CONTEXT: ${context}`,
-        config: {
-          systemInstruction: adviceSystemPrompt(language),
-          responseMimeType: "application/json",
-          responseJsonSchema: modelAdviceJsonSchema,
-          maxOutputTokens: ADVICE_MAX_OUTPUT_TOKENS,
-          temperature: AI_TEMPERATURE,
-          thinkingConfig: { thinkingBudget: 0 },
-          abortSignal: AbortSignal.timeout(AI_TIMEOUT_MS),
-        },
-      });
       const parsed = ModelAdviceSchema.safeParse(JSON.parse(res.text ?? ""));
       const merged = parsed.success ? mergeModelAdvice(parsed.data, facts, s, context, language) : null;
       if (merged) return merged;
       console.warn(`Gemini advice rejected (attempt ${attempt + 1})`);
-    } catch (err) {
-      console.warn(`Gemini advice failed (attempt ${attempt + 1})`, err instanceof Error ? err.message : err);
+    } catch {
+      console.warn(`Gemini advice returned invalid JSON (attempt ${attempt + 1})`);
     }
   }
   return null;
 }
 
 /**
- * Personalised advice for a live snapshot. Gemini rephrases and prioritises pre-computed facts;
- * if it is unavailable or fails validation twice, rule-based advice is returned instead.
- * Cached 15 minutes per station reading + profile + language.
+ * Personalised advice for a live snapshot.
+ * Cache the model attempt for 30 minutes per station, NAQI category, household and language.
+ * When grounded details change within that band, rebuild advice from the current facts.
  */
-export function getAdvice(s: AQSnapshot, profile: UserProfile, language: Language, hasMetro: boolean): Promise<AdviceResult> {
-  const hash = createHash("sha256").update(JSON.stringify([s.station.id, s.measuredAt, profile, language, hasMetro])).digest("hex");
-  return cache.getOrLoad(hash, async () => {
-    const facts = buildFacts(s, profile, hasMetro, language);
-    const ai = await generateWithGemini(s, profile, facts, language);
-    return ai ? { advice: ai, generatedBy: "gemini" } : { advice: ruleBasedAdvice(s, facts, language), generatedBy: "rules" };
-  });
+export async function getAdvice(s: AQSnapshot, profile: UserProfile, language: Language, hasMetro: boolean): Promise<AdviceResult> {
+  const hash = createHash("sha256").update(JSON.stringify([s.station.id, s.category, profile, language, hasMetro])).digest("hex");
+  const facts = buildFacts(s, profile, hasMetro, language);
+  const context = buildContext(s, profile, facts);
+  const cached = await cache.getOrLoad(hash, async () => ({ context, advice: await generateWithGemini(s, facts, context, language) }));
+  if (cached.advice && cached.context === context) return { advice: cached.advice, generatedBy: "gemini" };
+  return { advice: ruleBasedAdvice(s, facts, language), generatedBy: "rules" };
 }

@@ -16,7 +16,7 @@ describe("getGemini", () => {
     const getGemini = await load();
     expect(getGemini()).toBe(getGemini());
     expect(ctor).toHaveBeenCalledTimes(1);
-    expect(ctor).toHaveBeenCalledWith({ apiKey: "test-key-123", httpOptions: { apiVersion: "v1beta" } });
+    expect(ctor).toHaveBeenCalledWith({ apiKey: "test-key-123", httpOptions: { apiVersion: "v1beta", retryOptions: { attempts: 1 } } });
   });
 
   it("returns null without a key (rule-based mode)", async () => {

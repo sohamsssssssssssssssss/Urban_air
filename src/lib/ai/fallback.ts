@@ -11,21 +11,24 @@ const TEXT: Record<Language, {
   measured: (w: string, avg: number) => string;
   typical: (w: string) => string;
   stale: string;
-  summary: (d: { aqi: number; cat: string; station: string; time: string; source: string; dom: string; health: string }) => string;
+  provisional: string;
+  summary: (d: { aqi: number; cat: string; station: string; time: string; source: string; dom: string; health: string; provisional: string }) => string;
 }> = {
   en: {
     severe: "Avoid outdoor exertion today. If you must go out: ",
     measured: (w, avg) => `${w} (lowest PM2.5 at this station over the last 24 h, ${avg} µg/m³).`,
     typical: (w) => `${w}, usually the least polluted hours as the afternoon air mixes.`,
     stale: " This reading is more than 3 hours old.",
-    summary: (d) => `AQI ${d.aqi} (${d.cat}) at ${d.station}, measured ${d.time} via ${d.source}. Main pollutant: ${d.dom}. ${d.health}`,
+    provisional: "Provisional ",
+    summary: (d) => `${d.provisional}AQI ${d.aqi} (${d.cat}) at ${d.station}, measured ${d.time} via ${d.source}. Main pollutant: ${d.dom}. ${d.health}`,
   },
   hi: {
     severe: "आज बाहर ज़ोरदार गतिविधि से बचें। अगर जाना ही हो: ",
     measured: (w, avg) => `${w} (पिछले 24 घंटों में इस स्टेशन पर सबसे कम PM2.5, ${avg} µg/m³)।`,
     typical: (w) => `${w}, दोपहर में हवा मिलने से आम तौर पर सबसे कम प्रदूषण।`,
     stale: " यह रीडिंग 3 घंटे से ज़्यादा पुरानी है।",
-    summary: (d) => `${d.station} पर AQI ${d.aqi} (${d.cat}), ${d.time} पर ${d.source} से मापा गया। मुख्य प्रदूषक: ${d.dom}। ${d.health}`,
+    provisional: "अस्थायी ",
+    summary: (d) => `${d.station} पर ${d.provisional}AQI ${d.aqi} (${d.cat}), ${d.time} पर ${d.source} से मापा गया। मुख्य प्रदूषक: ${d.dom}। ${d.health}`,
   },
 };
 
@@ -44,7 +47,7 @@ export function bestOutdoorWindow(s: AQSnapshot, lang: Language = "en"): string 
 /** Plain-language summary citing the station and measurement time. */
 export function ruleSummary(s: AQSnapshot, lang: Language = "en"): string {
   const t = TEXT[lang];
-  const summary = t.summary({ aqi: s.aqi, cat: CATEGORY_LABEL[lang][s.category], station: s.station.name, time: formatIST(s.measuredAt), source: s.source, dom: POLLUTANT_LABEL[s.dominant], health: HEALTH_IMPACT[lang][s.category] });
+  const summary = t.summary({ aqi: s.aqi, cat: CATEGORY_LABEL[lang][s.category], station: s.station.name, time: formatIST(s.measuredAt), source: s.source, dom: POLLUTANT_LABEL[s.dominant], health: HEALTH_IMPACT[lang][s.category], provisional: s.provisional ? t.provisional : "" });
   return s.stale ? summary + t.stale : summary;
 }
 

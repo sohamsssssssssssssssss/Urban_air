@@ -42,6 +42,11 @@ describe("AqiCard", () => {
     expect(screen.getByText(/Hourly history is incomplete/)).toBeTruthy();
   });
 
+  it("identifies a low-cost sensor in the card", () => {
+    render(<AqiCard state={{ status: "ready", snapshot: { ...snapshot, sensorType: "low-cost" } }} />);
+    expect(screen.getByText("Low-cost sensor reading.")).toBeTruthy();
+  });
+
   it("shows an explicit unavailable state instead of guessed values", async () => {
     const { container } = render(<AqiCard state={{ status: "unavailable", message: "No station answered." }} />);
     expect(screen.getByRole("alert").textContent).toContain("Live data unavailable");

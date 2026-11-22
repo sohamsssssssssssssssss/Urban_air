@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { OPENAQ_LOCATION_LIMIT } from "@/lib/constants";
 import locations from "../fixtures/live/openaq-locations-delhi.json";
 import latestTalkatora from "../fixtures/live/openaq-latest-6254594.json";
 import latestLodhi from "../fixtures/live/openaq-latest-5634.json";
@@ -43,6 +44,7 @@ describe("getAirQuality (real fixtures)", () => {
     vi.stubGlobal("fetch", fetchMock);
     const s = await (await load()).getAirQuality(DELHI);
     expect(s.source).toBe("OpenAQ");
+    expect(s.sensorType).toBe("reference");
     expect(s.station.name).toBe("Talkatora Garden, Delhi - DPCC");
     expect(s).toMatchObject({ aqi: 319, category: "Very Poor", dominant: "pm25", stale: false, provisional: true, measuredAt: "2026-11-22T12:30:00.000Z" });
     expect(s.pollutants.pm25).toBe(88.56);
@@ -83,6 +85,45 @@ describe("getAirQuality (real fixtures)", () => {
     const deadOnly = { results: locations.results.filter((l) => l.id === 13 || l.id === 15) };
     vi.stubGlobal("fetch", vi.fn(routeFetch([["/locations?", deadOnly], liveCpcb])));
     expect((await (await load()).getAirQuality({ ...DELHI, city: "Delhi" })).source).toBe("CPCB");
+  });
+
+  it("checks reference monitors first even when a low-cost sensor is closer", async () => {
+    const [monitor] = oneLocation(1, hoursAgo(1), [[11, "pm25", "µg/m³"]]).results;
+    const [sensor] = oneLocation(2, hoursAgo(1), [[21, "pm25", "µg/m³"]]).results;
+    const results = { results: [{ ...sensor, distance: 10, isMonitor: false }, { ...monitor, isMonitor: true }] };
+    const latest = { results: [{ datetime: { utc: hoursAgo(1) }, value: 60, sensorsId: 11 }] };
+    const fetchMock = vi.fn(routeFetch([["monitor=true", results], ["/locations/1/latest", latest]]));
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await (await load()).getAirQuality(DELHI)).toMatchObject({ source: "OpenAQ", sensorType: "reference", station: { id: "openaq:1" } });
+    expect(fetchMock.mock.calls.map(([url]) => String(url)).join(" ")).not.toMatch(/monitor=false|locations\/2\/latest/);
+  });
+
+  it.each([false, true])("uses a low-cost sensor only as a fallback, with CPCB available: %s", async (hasCpcb) => {
+    const [monitor] = oneLocation(1, hoursAgo(1), [[11, "pm25", "µg/m³"]]).results;
+    const [sensor] = oneLocation(2, hoursAgo(1), [[21, "pm25", "µg/m³"]]).results;
+    const latest = { results: [{ datetime: { utc: hoursAgo(1) }, value: 60, sensorsId: 21 }] };
+    const fetchMock = vi.fn(routeFetch([
+      ["monitor=true", { results: [{ ...monitor, distance: 25_001, isMonitor: true }] }],
+      ["monitor=false", { results: [{ ...sensor, isMonitor: false }] }],
+      ["/locations/2/latest", latest],
+      ...(hasCpcb ? [liveCpcb] : []),
+    ]));
+    vi.stubGlobal("fetch", fetchMock);
+    const s = await (await load()).getAirQuality(DELHI);
+    expect(s).toMatchObject(hasCpcb ? { source: "CPCB", sensorType: "reference" } : { source: "OpenAQ", sensorType: "low-cost" });
+    expect(fetchMock.mock.calls.map(([url]) => String(url)).join(" ")).not.toContain("/locations/1/latest");
+  });
+
+  it("checks the next page for a reference monitor before falling back", async () => {
+    const [offline] = oneLocation(1, hoursAgo(30), [[11, "pm25", "µg/m³"]]).results;
+    const monitor = oneLocation(2, hoursAgo(1), [[21, "pm25", "µg/m³"]]);
+    const latest = { results: [{ datetime: { utc: hoursAgo(1) }, value: 60, sensorsId: 21 }] };
+    vi.stubGlobal("fetch", vi.fn(routeFetch([
+      ["monitor=true&page=1", { results: Array.from({ length: OPENAQ_LOCATION_LIMIT }, (_, i) => ({ ...offline, id: i + 100 })) }],
+      ["monitor=true&page=2", monitor],
+      ["/locations/2/latest", latest],
+    ])));
+    expect(await (await load()).getAirQuality(DELHI)).toMatchObject({ sensorType: "reference", station: { id: "openaq:2" } });
   });
 
   it("keeps the freshest of duplicate sensors and ignores future timestamps", async () => {

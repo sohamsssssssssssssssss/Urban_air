@@ -8,6 +8,7 @@ const EnvSchema = z.object({
   OPENAQ_API_KEY: optionalKey,
   DATA_GOV_IN_API_KEY: optionalKey,
   GEMINI_API_KEY: optionalKey,
+  GEMINI_MODEL: z.string().trim().optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
