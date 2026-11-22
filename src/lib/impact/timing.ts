@@ -27,6 +27,13 @@ export function istHour(iso: string): number {
   return Math.floor(minutes / MINUTES_PER_HOUR) % HOURS_PER_DAY;
 }
 
+/** Latest PM2.5 per IST hour of day from hourly history (the 24 h profile that repeats daily). */
+export function hourProfile(history: HourlyPoint[]): Map<number, number> {
+  const byHour = new Map<number, number>();
+  for (const p of [...history].sort((a, b) => a.at.localeCompare(b.at))) byHour.set(istHour(p.at), p.pm25);
+  return byHour;
+}
+
 /** "13:00–16:00" */
 export function formatWindow(w: TimeWindow): string {
   const f = (h: number) => `${String(h % HOURS_PER_DAY).padStart(2, "0")}:00`;
@@ -43,8 +50,7 @@ export function timingFromHistory(history: HourlyPoint[] | undefined): Timing {
   const fallback: Timing = { best: { ...DEFAULT_CLEAN_WINDOW }, measured: false };
   if (!history || history.length < MIN_HISTORY_POINTS) return fallback;
 
-  const byHour = new Map<number, number>();
-  for (const p of [...history].sort((a, b) => a.at.localeCompare(b.at))) byHour.set(istHour(p.at), p.pm25);
+  const byHour = hourProfile(history);
 
   const windows: TimeWindow[] = [];
   for (let start = WAKING_HOURS.start; start + WINDOW_HOURS <= WAKING_HOURS.end; start++) {

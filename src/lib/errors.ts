@@ -1,5 +1,5 @@
 /** Machine-readable error codes returned by the API. */
-export type ErrorCode = "BAD_REQUEST" | "RATE_LIMITED" | "AQ_UNAVAILABLE" | "AI_UNAVAILABLE" | "INTERNAL";
+export type ErrorCode = "BAD_REQUEST" | "RATE_LIMITED" | "AQ_UNAVAILABLE" | "AI_UNAVAILABLE" | "PLACE_NOT_FOUND" | "GEOCODE_UNAVAILABLE" | "ROUTE_UNAVAILABLE" | "INTERNAL";
 
 /** Base class for expected, user-safe errors. The message is safe to show to clients. */
 export class AppError extends Error {
@@ -38,6 +38,27 @@ export class AQUnavailableError extends AppError {
 export class AIUnavailableError extends AppError {
   constructor(message = "The AI assistant is unavailable right now.") {
     super("AI_UNAVAILABLE", 503, message);
+  }
+}
+
+/** A place name matched nothing in Nominatim. */
+export class PlaceNotFoundError extends AppError {
+  constructor(message = "We couldn't find that place. Try a more specific name or add the city.") {
+    super("PLACE_NOT_FOUND", 404, message);
+  }
+}
+
+/** Nominatim (place search) failed or timed out. */
+export class GeocodeUnavailableError extends AppError {
+  constructor(message = "Place search is unavailable right now. Please try again shortly.") {
+    super("GEOCODE_UNAVAILABLE", 503, message);
+  }
+}
+
+/** OSRM returned no route for any mode, or failed. */
+export class RouteUnavailableError extends AppError {
+  constructor(message = "No route could be found between these places right now.") {
+    super("ROUTE_UNAVAILABLE", 503, message);
   }
 }
 

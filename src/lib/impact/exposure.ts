@@ -12,11 +12,16 @@ import type { CommuteMode } from "../profile";
 const PERCENT = 100;
 
 /**
- * Relative inhaled PM2.5 dose for one trip: in-mode concentration ratio × breathing rate × time.
+ * Relative inhaled PM2.5 dose for a trip of known duration: in-mode concentration ratio × breathing rate × hours.
  * Multiply by ambient PM2.5 (µg/m³) to get µg inhaled.
  */
+export function doseForHours(mode: CommuteMode, hours: number): number {
+  return MODE_EXPOSURE_RATIO[mode] * INHALATION_M3H[MODE_ACTIVITY[mode]] * hours;
+}
+
+/** Same, for a trip of known distance at the mode's typical urban speed. */
 export function tripDose(mode: CommuteMode, km: number): number {
-  return MODE_EXPOSURE_RATIO[mode] * INHALATION_M3H[MODE_ACTIVITY[mode]] * (km / SPEED_KMH[mode]);
+  return doseForHours(mode, km / SPEED_KMH[mode]);
 }
 
 /**
