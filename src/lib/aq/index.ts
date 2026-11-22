@@ -46,10 +46,12 @@ async function loadFromSources(query: GeoQuery): Promise<AQSnapshot> {
   if (cpcb && !cpcb.stale) {
     if (openAQ.sensorType === "low-cost") return cpcb;
     const name = stationName(openAQ.station.name);
+    const cpcbIsNearer = cpcb.station.distanceM !== undefined && cpcb.station.distanceM <= (openAQ.station.distanceM ?? Infinity);
+    if (cpcbIsNearer && stationName(cpcb.station.name) !== name) return cpcb;
     const match = stations.find((s) => stationName(s.station.name) === name && now - Date.parse(s.measuredAt) < STALE_AFTER_MS);
     const sameStation = match && toSnapshot(match, now);
     if (sameStation) return { ...sameStation, pollutants: openAQ.pollutants, history: openAQ.history, pm25MeasuredAt: openAQ.pm25MeasuredAt };
-    if (openAQ.stale || (cpcb.station.distanceM !== undefined && cpcb.station.distanceM <= (openAQ.station.distanceM ?? Infinity))) return cpcb;
+    if (openAQ.stale) return cpcb;
   }
   return openAQ;
 }

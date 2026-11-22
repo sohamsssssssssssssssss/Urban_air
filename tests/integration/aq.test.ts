@@ -87,6 +87,18 @@ describe("getAirQuality (real fixtures)", () => {
     expect((await (await load()).getAirQuality({ ...DELHI, city: "Delhi" })).source).toBe("CPCB");
   });
 
+  it("chooses the nearer fresh CPCB monitor even when a shared station also reports", async () => {
+    const base = { longitude: "77.21", last_update: "22-11-2026 18:00:00", pollutant_id: "PM2.5", avg_value: "283" };
+    const records = [
+      { ...base, station: "Talkatora Garden, Delhi-DPCC", latitude: "28.628" },
+      { ...base, station: "Closer monitor", latitude: "28.61", avg_value: "230" },
+    ];
+    vi.stubGlobal("fetch", vi.fn(routeFetch([...liveOpenAQ, ["api.data.gov.in", { records }]])));
+    expect(await (await load()).getAirQuality(DELHI)).toMatchObject({
+      source: "CPCB", station: { name: "Closer monitor" }, aqi: 230, pollutants: {},
+    });
+  });
+
   it("checks reference monitors first even when a low-cost sensor is closer", async () => {
     const [monitor] = oneLocation(1, hoursAgo(1), [[11, "pm25", "µg/m³"]]).results;
     const [sensor] = oneLocation(2, hoursAgo(1), [[21, "pm25", "µg/m³"]]).results;
