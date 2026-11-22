@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { ruleBasedAdvice } from "../../src/lib/ai/fallback";
 import { buildFacts } from "../../src/lib/impact/facts";
 import { profile, snapshot } from "../fixtures/data";
+import { routeResult } from "../fixtures/route";
 
 // Browser-level E2E: the server routes are covered by integration tests, so here we stub the
 // network to make the UI flow deterministic without API keys.
@@ -77,4 +78,18 @@ test("skip link and security headers", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("lang", "hi");
   await expect(page.getByRole("banner")).toContainText("ताज़ा वायु गुणवत्ता");
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "data.gov.in पर CPCB" })).toBeVisible();
+});
+
+test("route planner: places in, ranked routes out, accessible", async ({ page }) => {
+  await stubApi(page);
+  await page.route("**/api/route", (r) => r.fulfill({ json: routeResult }));
+  await page.goto("/");
+  await page.getByLabel("From").fill("Colaba Causeway, Mumbai");
+  await page.getByLabel("To").fill("Bandra Kurla Complex, Mumbai");
+  await page.getByRole("button", { name: "Find routes" }).click();
+  const section = page.getByRole("region", { name: "Cleaner routes" });
+  await expect(section.getByText("Cleanest air")).toBeVisible();
+  await expect(section).toContainText("Lowest estimated PM2.5 inhaled (7.9 µg)");
+  await expect(section).toContainText("not measured on the route");
+  expect((await axeScan(page)).violations).toEqual([]);
 });

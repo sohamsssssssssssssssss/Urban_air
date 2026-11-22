@@ -2,6 +2,8 @@ import type { AdviceResult } from "@/lib/ai/advisor";
 import type { AQSnapshot } from "@/lib/aq/types";
 import type { ChatTurn } from "@/lib/requests";
 import type { Language, Location, UserProfile } from "@/lib/profile";
+import type { RouteResult } from "@/lib/route";
+import type { RouteRequest } from "@/lib/route/request";
 
 /** Error carrying the API's typed error code. */
 export class ApiError extends Error {
@@ -46,4 +48,10 @@ export async function streamChatAnswer(body: { location: Location; profile: User
     if (done) break;
     onText(decoder.decode(value, { stream: true }));
   }
+}
+
+/** Plans routes between two places. */
+export async function fetchRoutes(body: RouteRequest): Promise<RouteResult> {
+  const res = await ok(await fetch("/api/route", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }));
+  return res.json();
 }

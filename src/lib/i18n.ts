@@ -133,6 +133,9 @@ const en = {
     AI_UNAVAILABLE: "The AI assistant is unavailable right now. The rule-based plan above still applies.",
     RATE_LIMITED: "Too many requests. Please wait a minute and try again.",
     BAD_REQUEST: "Some details look invalid. Please check the form.",
+    PLACE_NOT_FOUND: "We couldn't find that place. Try a more specific name or add the city.",
+    GEOCODE_UNAVAILABLE: "Place search is unavailable right now. Please try again shortly.",
+    ROUTE_UNAVAILABLE: "No route could be found between these places right now.",
     NETWORK: "Couldn't reach SmogSense. Check your connection and try again.",
   },
 };

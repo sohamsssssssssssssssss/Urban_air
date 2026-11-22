@@ -12,6 +12,8 @@ import ProfileForm from "./ProfileForm";
 import { ApiError, fetchAdvice, fetchAir } from "./apiClient";
 
 // Chat is below the fold and only useful after advice loads: keep it out of the initial bundle.
+// The route planner is independent of the plan and below the fold: load it lazily too.
+const RoutePlanner = dynamic(() => import("./RoutePlanner"), { loading: () => <p>…</p> });
 const ChatPanel = dynamic(() => import("./ChatPanel"), { loading: () => <p>…</p> });
 
 type Plan = { advice: Advice; generatedBy: "gemini" | "rules"; fallbackReason?: AiFailureReason; language: Language };
@@ -80,6 +82,7 @@ export default function Assistant() {
         {planError && <p role="alert" className="rounded-lg border border-red-800 bg-red-50 p-3 text-red-900">{planError}</p>}
         {plan && <AdviceTabs {...plan} />}
         {plan && request && <ChatPanel {...request} />}
+      <RoutePlanner language={language} />
       </main>
       <footer className="border-t border-slate-200 bg-white">
         <p className="mx-auto max-w-5xl px-4 py-6 text-sm text-slate-700">
