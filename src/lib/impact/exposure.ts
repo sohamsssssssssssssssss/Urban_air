@@ -1,5 +1,4 @@
 import {
-  DIURNAL_FACTOR,
   INFILTRATION_ACH,
   INHALATION_M3H,
   MODE_ACTIVITY,
@@ -27,11 +26,6 @@ export function tripDose(mode: CommuteMode, km: number): number {
 export function modeDoseChangePct(from: CommuteMode, to: CommuteMode, km: number): number {
   const base = tripDose(from, km);
   return base === 0 ? 0 : Math.round(((tripDose(to, km) - base) / base) * PERCENT);
-}
-
-/** Percent less PM2.5 met outdoors in the afternoon window vs the morning peak (typical winter day). */
-export function timingReductionPct(): number {
-  return Math.round((1 - DIURNAL_FACTOR.afternoon / DIURNAL_FACTOR.morningPeak) * PERCENT);
 }
 
 /**
