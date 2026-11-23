@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import type { AQSnapshot } from "../aq/types";
 import { createTtlCache } from "../cache";
 import { ADVICE_AI_TIMEOUT_MS, ADVICE_CACHE_TTL_MS, ADVICE_MAX_OUTPUT_TOKENS, AI_FAILURE_COOLDOWN_MS, AI_RETRIES, AI_TEMPERATURE } from "../constants";
+import type { Tone } from "../impact/copy/types";
 import { buildFacts } from "../impact/facts";
 import type { Language, UserProfile } from "../profile";
 import { getGemini, modelChain, thinkingFor } from "./client";
@@ -54,7 +55,7 @@ export function mergeModelAdvice(model: ModelAdvice, facts: Fact[], s: AQSnapsho
   return ungroundedNumbers(prose, context).length === 0 ? advice : null;
 }
 
-async function generateWithGemini(s: AQSnapshot, facts: Fact[], context: string, language: Language, target?: RephraseTarget): Promise<Attempt> {
+async function generateWithGemini(s: AQSnapshot, facts: Fact[], context: string, language: Language, target?: RephraseTarget, tone: Tone = "standard"): Promise<Attempt> {
   const ai = getGemini();
   if (!ai) return { reason: "auth" };
   const deadline = AbortSignal.timeout(ADVICE_AI_TIMEOUT_MS);
@@ -66,7 +67,7 @@ async function generateWithGemini(s: AQSnapshot, facts: Fact[], context: string,
           model,
           contents: `CONTEXT: ${context}`,
           config: {
-            systemInstruction: adviceSystemPrompt(language, Boolean(target)),
+            systemInstruction: adviceSystemPrompt(language, Boolean(target), tone),
             responseMimeType: "application/json",
             responseJsonSchema: modelAdviceJsonSchema,
             maxOutputTokens: ADVICE_MAX_OUTPUT_TOKENS,
@@ -97,9 +98,9 @@ async function generateWithGemini(s: AQSnapshot, facts: Fact[], context: string,
  * when grounded details change within that band, rule-based advice is rebuilt from the current facts.
  * A failed attempt is not cached beyond a short cooldown, so a transient quota error self-heals.
  */
-export async function getAdvice(s: AQSnapshot, profile: UserProfile, language: Language, hasMetro: boolean, rephrase?: RephraseTarget): Promise<AdviceResult> {
-  const hash = createHash("sha256").update(JSON.stringify([s.station.id, s.category, profile, language, hasMetro, rephrase?.line])).digest("hex");
-  const facts = buildFacts(s, profile, hasMetro, language);
+export async function getAdvice(s: AQSnapshot, profile: UserProfile, language: Language, hasMetro: boolean, rephrase?: RephraseTarget, tone: Tone = "standard"): Promise<AdviceResult> {
+  const hash = createHash("sha256").update(JSON.stringify([s.station.id, s.category, profile, language, hasMetro, rephrase?.line, tone])).digest("hex");
+  const facts = buildFacts(s, profile, hasMetro, language, tone);
   const context = buildContext(s, profile, facts, rephrase ? { todayLine: rephrase.line } : undefined);
   const rules = (fallbackReason: AiFailureReason): AdviceResult => ({ advice: ruleBasedAdvice(s, facts, language), generatedBy: "rules", fallbackReason });
 
@@ -109,7 +110,7 @@ export async function getAdvice(s: AQSnapshot, profile: UserProfile, language: L
   const cooling = failures.get(hash);
   if (cooling) return rules(cooling);
 
-  const pending = inFlight.get(hash) ?? generateWithGemini(s, facts, context, language, rephrase).finally(() => inFlight.delete(hash));
+  const pending = inFlight.get(hash) ?? generateWithGemini(s, facts, context, language, rephrase, tone).finally(() => inFlight.delete(hash));
   inFlight.set(hash, pending);
   const attempt = await pending;
   if ("advice" in attempt) {

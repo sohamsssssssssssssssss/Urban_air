@@ -40,3 +40,7 @@ export interface FactCopy {
   active: { action(aqi: number, km: number): string; why: string; impact(weeklyKg: number): string; forYou(km: number): string };
   burning: { action: string; why: string; impact(kg: number, grams: number): string; forYou: string };
 }
+
+/** Wording style for tips. "kids" uses short, jargon-free sentences for routine and indoor tips; the numbers never change. */
+export const TONES = ["standard", "kids"] as const;
+export type Tone = (typeof TONES)[number];

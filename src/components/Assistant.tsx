@@ -7,6 +7,8 @@ import type { Advice } from "@/lib/ai/schema";
 import { UI, errorMessage, type Language } from "@/lib/i18n";
 import type { Location, UserProfile } from "@/lib/profile";
 import Toolbox from "@/features/Toolbox";
+import KidModeToggle from "@/features/kids/KidModeToggle";
+import { readFlag, writeFlag } from "@/features/shared/storage";
 import TodayLine from "@/features/today/TodayLine";
 import AdviceTabs from "./AdviceTabs";
 import AqiCard, { type AirState } from "./AqiCard";
@@ -27,12 +29,16 @@ export default function Assistant() {
   const [planError, setPlanError] = useState("");
   const [request, setRequest] = useState<Request | null>(null);
   const [busy, setBusy] = useState(false);
+  const [kidMode, setKidMode] = useState(false);
   const t = UI[language];
 
   // Keep the document language in sync so screen readers switch pronunciation.
   useEffect(() => {
     document.documentElement.lang = language;
   }, [language]);
+
+  // The preference is per device; read it after hydration so server and client markup match.
+  useEffect(() => setKidMode(readFlag("kids")), []);
 
   const messageFor = (err: unknown, lang: Language) => (err instanceof ApiError ? errorMessage(lang, err.code, err.message) : errorMessage(lang));
 
@@ -46,7 +52,7 @@ export default function Assistant() {
     const airCall = fetchAir(location)
       .then((snapshot) => setAir({ status: "ready", snapshot }))
       .catch((err: unknown) => setAir({ status: "unavailable", message: messageFor(err, lang) }));
-    const adviceCall = fetchAdvice(location, profile, lang)
+    const adviceCall = fetchAdvice(location, profile, lang, kidMode && profile.kids ? "kids" : "standard")
       .then(({ advice, generatedBy, todayLine, fallbackReason, snapshot }) => {
         setPlan({ advice, generatedBy, todayLine, fallbackReason, language: lang });
         setAir({ status: "ready", snapshot });
@@ -57,6 +63,23 @@ export default function Assistant() {
       });
     await Promise.all([airCall, adviceCall]);
     setBusy(false);
+  }
+
+  /** Re-requests the plan in the other wording; the live reading and household are unchanged. */
+  async function changeTone(next: boolean) {
+    setKidMode(next);
+    writeFlag("kids", next);
+    if (!request) return;
+    setBusy(true);
+    setPlanError("");
+    try {
+      const { advice, generatedBy, todayLine, fallbackReason } = await fetchAdvice(request.location, request.profile, request.language, next ? "kids" : "standard");
+      setPlan({ advice, generatedBy, todayLine, fallbackReason, language: request.language });
+    } catch (err) {
+      setPlanError(messageFor(err, request.language));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -84,6 +107,7 @@ export default function Assistant() {
           </p>
         )}
         {planError && <p role="alert" className="rounded-lg border border-red-800 bg-red-50 p-3 text-red-900">{planError}</p>}
+        {plan && request?.profile.kids && <KidModeToggle enabled={kidMode} busy={busy} language={language} onChange={changeTone} />}
         {plan && <AdviceTabs {...plan} />}
         {plan && request && <ChatPanel {...request} />}
       <Toolbox language={language} context={air.status === "ready" && request ? { snapshot: air.snapshot, profile: request.profile, location: request.location } : undefined} />

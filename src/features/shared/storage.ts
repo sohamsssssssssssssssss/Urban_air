@@ -42,3 +42,17 @@ export function clearStored(name: string): void {
 export function istDayKey(now = Date.now()): string {
   return new Date(now + IST_OFFSET_MS).toISOString().slice(0, 10);
 }
+
+/** Reads a simple on/off preference (no Zod, so it can run in the first-load bundle). False if missing or blocked. */
+export function readFlag(name: string): boolean {
+  try {
+    return window.localStorage.getItem(PREFIX + name) === "true";
+  } catch {
+    return false;
+  }
+}
+
+/** Saves a simple on/off preference; returns false when storage is blocked. */
+export function writeFlag(name: string, value: boolean): boolean {
+  return writeStored(name, value);
+}

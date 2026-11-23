@@ -65,6 +65,13 @@ describe("API routes", () => {
       expect(body.snapshot.station.name).toBe("Anand Vihar, Delhi");
       expect(body.advice.alternatives.length).toBeGreaterThan(0);
     });
+    it("returns kid-friendly rule-based tips when tone is kids, and rejects an unknown tone", async () => {
+      const res = await advice(post("/api/advice", { location, profile, language: "en", tone: "kids" }));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.advice.routines.map((i: { action: string }) => i.action).join(" ")).toMatch(/Go out to play|Play and exercise/);
+      expect((await advice(post("/api/advice", { location, profile, language: "en", tone: "baby" }))).status).toBe(400);
+    });
     it("400 on malformed JSON, oversize body or invalid profile", async () => {
       expect((await advice(post("/api/advice", "{nope"))).status).toBe(400);
       expect((await advice(post("/api/advice", "x".repeat(20_000)))).status).toBe(400);

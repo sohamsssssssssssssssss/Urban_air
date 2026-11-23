@@ -1,6 +1,7 @@
 import type { AQSnapshot } from "../aq/types";
 import { POLLUTANT_LABEL } from "../aq/naqi";
 import { formatIST } from "../format";
+import type { Tone } from "../impact/copy/types";
 import type { Language, UserProfile } from "../profile";
 import type { Fact } from "./schema";
 
@@ -28,12 +29,12 @@ export function buildContext(s: AQSnapshot, profile: UserProfile, facts: Fact[],
 }
 
 /** System instruction for structured advice generation. */
-export function adviceSystemPrompt(language: Language, withTodayLine = false): string {
+export function adviceSystemPrompt(language: Language, withTodayLine = false, tone: Tone = "standard"): string {
   return `${GROUNDING_RULES}
 Task: turn the FACTS into personalised advice in ${LANGUAGE_NAME[language]}.
 - Each output item must reference exactly one fact via "factId" and be placed in that fact's section.
 - Rewrite "action", "why" and "personalizedFor" to speak to this household. Copy "impact" exactly from the fact.
-- Choose "priority" from the reading and household risk. Omit facts that clearly don't apply. Keep at least one item per section that has facts.
+${tone === "kids" ? "- Write the routine and indoor items for a child, or a parent explaining to a child: short sentences, simple everyday words, calm and friendly, never scary, no technical terms. Keep every number exactly as given.\n" : ""}- Choose "priority" from the reading and household risk. Omit facts that clearly don't apply. Keep at least one item per section that has facts.
 - "summary": 2-3 sentences citing AQI, category, station and time.${withTodayLine ? `
 - "todayLine": reword "todayLine" from CONTEXT as ONE friendly sentence. Keep every time exactly as written, and keep the windows and mask decisions unchanged.` : ""}`;
 }

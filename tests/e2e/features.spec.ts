@@ -87,6 +87,17 @@ test("v2 feature smoke", async ({ page }) => {
     expect(await page.evaluate(() => (window as unknown as { __permissionAsks: number }).__permissionAsks)).toBe(0);
   });
 
+  await test.step("kid-friendly mode: simpler wording on request, saved on this device", async () => {
+    await page.getByRole("checkbox", { name: "Kid-friendly wording" }).check();
+    await expect(page.getByRole("tabpanel")).toContainText("Go out to play between");
+    await expect(page.getByRole("tabpanel")).not.toContainText("Schedule outdoor errands");
+    await page.getByRole("tab", { name: /Indoor air/ }).click();
+    await expect(page.getByRole("tabpanel")).toContainText("tiny dust");
+    expect(await page.evaluate(() => window.localStorage.getItem("smogsense:v1:kids"))).toBe("true");
+    await page.getByRole("checkbox", { name: "Kid-friendly wording" }).uncheck();
+    await expect(page.getByRole("tab", { name: /Daily routines/ })).toBeVisible();
+  });
+
   await test.step("accessibility: no axe violations with all sections open", async () => {
     expect((await axeScan(page)).violations).toEqual([]);
   });

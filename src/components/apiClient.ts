@@ -1,4 +1,5 @@
 import type { AdviceResult } from "@/lib/ai/advisor";
+import type { Tone } from "@/lib/impact/copy/types";
 import type { AQSnapshot } from "@/lib/aq/types";
 import type { ChatTurn } from "@/lib/requests";
 import type { Language, Location, UserProfile } from "@/lib/profile";
@@ -33,8 +34,8 @@ export async function fetchAir(location: Location): Promise<AQSnapshot> {
 }
 
 /** Requests personalised advice. */
-export async function fetchAdvice(location: Location, profile: UserProfile, language: Language): Promise<AdviceResult & { snapshot: AQSnapshot }> {
-  const res = await ok(await fetch("/api/advice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location, profile, language }) }));
+export async function fetchAdvice(location: Location, profile: UserProfile, language: Language, tone: Tone = "standard"): Promise<AdviceResult & { snapshot: AQSnapshot }> {
+  const res = await ok(await fetch("/api/advice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location, profile, language, tone }) }));
   return res.json();
 }
 
