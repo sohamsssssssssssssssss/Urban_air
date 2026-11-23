@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ApiError, fetchOutlook } from "@/components/apiClient";
 import { CATEGORY_LABEL, errorMessage, type Language } from "@/lib/i18n";
 import type { Location } from "@/lib/profile";
@@ -8,10 +8,10 @@ import type { Outlook as OutlookData } from "./server";
 import { formatWhen, formatWindowWhen } from "./logic";
 import OutlookChart from "./OutlookChart";
 import { OUTLOOK_STRINGS } from "./strings";
+import Section from "@/components/ui/Section";
 
 /** 48-hour model forecast with the cleanest windows, a chart with a text alternative, and an hourly table. */
 export default function Outlook({ location, language }: { location: Location; language: Language }) {
-  const id = useId();
   const t = OUTLOOK_STRINGS[language];
   const [data, setData] = useState<OutlookData | null>(null);
   const [error, setError] = useState("");
@@ -32,8 +32,7 @@ export default function Outlook({ location, language }: { location: Location; la
   }, [location, language, attempt]);
 
   return (
-    <section aria-labelledby={`${id}-h`} aria-busy={!data && !error} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
-      <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
+    <Section title={t.heading} busy={!data && !error}>
       <p className="mt-1 inline-block rounded border-2 border-warn bg-warn-soft px-2 py-1 text-sm font-semibold text-warn-text">{t.badge}</p>
       <p className="mt-2 text-ink">{t.intro}</p>
       {!data && !error && <p className="mt-3 text-ink-muted">{t.loading}</p>}
@@ -73,6 +72,6 @@ export default function Outlook({ location, language }: { location: Location; la
         </>
       )}
       <p className="mt-3 text-xs text-ink-muted">{t.attribution}</p>
-    </section>
+    </Section>
   );
 }

@@ -4,6 +4,7 @@ import type { UserProfile } from "@/lib/profile";
 import { MASK_SOURCE, NIOSH_SOURCE } from "./constants";
 import { MASK_ACTIVITIES, maskFor } from "./logic";
 import { MASK_STRINGS } from "./strings";
+import Section from "@/components/ui/Section";
 
 /** Lowest AQI of each CPCB band, used to fill the reference table. */
 const BAND_START: ReadonlyArray<[AqiCategory, number]> = [["Good", 0], ["Satisfactory", 51], ["Moderate", 101], ["Poor", 201], ["Very Poor", 301], ["Severe", 401]];
@@ -22,8 +23,7 @@ export default function MaskGuide({ snapshot, profile, language }: MaskGuideProp
   const level = (aqi: number, activity: "commute" | "exertion", s: boolean) => t.level[maskFor({ aqi, activity, sensitive: s, child: false }).level];
 
   return (
-    <section aria-labelledby="mask-heading" className="rounded-xl border border-line bg-surface p-5 shadow-sm">
-      <h2 id="mask-heading" className="text-xl font-semibold">{t.heading}</h2>
+    <Section title={t.heading}>
       <p className="mt-1 text-ink">{t.intro(snapshot.aqi, CATEGORY_LABEL[language][snapshot.category])}</p>
       <table className="mt-3 w-full text-left text-sm">
         <thead><tr className="border-b border-line"><th scope="col" className="py-1 pr-3">{t.colActivity}</th><th scope="col" className="py-1">{t.colAdvice}</th></tr></thead>
@@ -67,6 +67,6 @@ export default function MaskGuide({ snapshot, profile, language }: MaskGuideProp
         <a className="underline" href={MASK_SOURCE.url} rel="noopener noreferrer">{MASK_SOURCE.org}, {MASK_SOURCE.title} ({MASK_SOURCE.date})</a>;{" "}
         <a className="underline" href={NIOSH_SOURCE.url} rel="noopener noreferrer">{NIOSH_SOURCE.org}</a>.
       </p>
-    </section>
+    </Section>
   );
 }

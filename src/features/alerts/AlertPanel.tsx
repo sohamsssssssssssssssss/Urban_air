@@ -12,6 +12,7 @@ import { permissionState, registerServiceWorker, requestPermission, type Permiss
 import { AlertSettingsSchema, type AlertSettings } from "./schema";
 import { ALERT_STRINGS } from "./strings";
 import { useAirAlerts } from "./useAirAlerts";
+import Section from "@/components/ui/Section";
 
 const field = "mt-1 block min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 py-2";
 
@@ -37,8 +38,7 @@ export default function AlertPanel({ location, language }: { location: Location;
   }
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
-      <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
+    <Section title={t.heading}>
       <p className="mt-1 rounded border border-warn bg-warn-soft p-3 text-sm font-medium text-warn-text">{t.limit}</p>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <div>
@@ -76,6 +76,6 @@ export default function AlertPanel({ location, language }: { location: Location;
       {settings.enabled && state.above && state.snapshot && dismissed !== readingKey && (
         <AlertBanner snapshot={state.snapshot} city={settings.city} threshold={settings.threshold} language={language} onDismiss={() => setDismissed(readingKey)} />
       )}
-    </section>
+    </Section>
   );
 }

@@ -2,11 +2,12 @@
 
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 import type { AiFailureReason } from "@/lib/ai/failure";
-import type { Advice, AdviceItem, Section } from "@/lib/ai/schema";
+import type { Advice, AdviceItem, Section as SectionKey } from "@/lib/ai/schema";
 import TipFeedback from "@/features/feedback/TipFeedback";
 import { UI, type Language } from "@/lib/i18n";
+import Section from "@/components/ui/Section";
 
-const TABS: Section[] = ["routines", "indoor", "alternatives"];
+const TABS: SectionKey[] = ["routines", "indoor", "alternatives"];
 const PRIORITY_STYLE: Record<AdviceItem["priority"], string> = {
   high: "border-danger text-danger-text",
   medium: "border-warn text-warn-text",
@@ -38,8 +39,7 @@ export default function AdviceTabs({ advice, generatedBy, fallbackReason = "othe
   }
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
-      <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
+    <Section title={t.heading}>
       <p className="mt-1 text-sm text-ink-muted">
         {generatedBy === "gemini" ? t.byGemini : t.byRules(t.aiReasons[fallbackReason])}
       </p>
@@ -72,7 +72,7 @@ export default function AdviceTabs({ advice, generatedBy, fallbackReason = "othe
           )}
         </div>
       ))}
-    </section>
+    </Section>
   );
 }
 

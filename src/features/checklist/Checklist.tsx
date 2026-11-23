@@ -1,6 +1,5 @@
 "use client";
 
-import { useId } from "react";
 import type { AQSnapshot } from "@/lib/aq/types";
 import type { Language } from "@/lib/i18n";
 import type { UserProfile } from "@/lib/profile";
@@ -8,6 +7,7 @@ import { istDayKey } from "../shared/storage";
 import { useStoredState } from "../shared/useStoredState";
 import { CHECKLIST_STORAGE_KEY, ChecklistStateSchema, buildChecklist, tickedToday, toggleItem } from "./logic";
 import { CHECKLIST_STRINGS } from "./strings";
+import Section from "@/components/ui/Section";
 
 const EMPTY = { day: "", checked: [] as string[] };
 
@@ -19,15 +19,13 @@ export interface ChecklistProps {
 
 /** Checkable indoor actions with Why and Impact, saved on this device and reset each (IST) day. */
 export default function Checklist({ snapshot, profile, language }: ChecklistProps) {
-  const id = useId();
   const t = CHECKLIST_STRINGS[language];
   const [state, setState] = useStoredState(CHECKLIST_STORAGE_KEY, ChecklistStateSchema, EMPTY);
   const items = buildChecklist(snapshot, profile, language);
   const ticked = tickedToday(state, items);
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
-      <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
+    <Section title={t.heading}>
       <p className="mt-1 text-ink">{t.intro}</p>
       <p aria-live="polite" className="mt-2 font-semibold">{t.progress(ticked.length, items.length)}</p>
       <fieldset className="mt-2">
@@ -58,6 +56,6 @@ export default function Checklist({ snapshot, profile, language }: ChecklistProp
         </button>
         <p className="text-xs text-ink-muted">{t.storage}</p>
       </div>
-    </section>
+    </Section>
   );
 }

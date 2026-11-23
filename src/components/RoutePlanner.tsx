@@ -9,6 +9,7 @@ import type { RouteResult } from "@/lib/route";
 import { ApiError, fetchRoutes } from "./apiClient";
 import type { TripDraft } from "@/features/tracker/schema";
 import RouteResults from "./RouteResults";
+import Section from "@/components/ui/Section";
 
 const field = "mt-1 block min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 py-2";
 
@@ -38,8 +39,7 @@ export default function RoutePlanner({ language, onLogTrip }: { language: Langua
   }
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
-      <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
+    <Section title={t.heading}>
       <p className="mt-1 text-ink">{t.intro}</p>
       <form onSubmit={submit} className="mt-4 grid gap-4 md:grid-cols-3">
         <div>
@@ -65,6 +65,6 @@ export default function RoutePlanner({ language, onLogTrip }: { language: Langua
         {error && <p role="alert" className="mt-3 rounded-lg border border-danger bg-danger-soft p-3 text-danger-text">{error}</p>}
         {result && <RouteResults result={result} language={language} onLogTrip={onLogTrip} />}
       </div>
-    </section>
+    </Section>
   );
 }

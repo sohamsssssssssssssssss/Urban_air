@@ -11,6 +11,7 @@ import { TrackerStateSchema, type TripDraft } from "./schema";
 import TrackerList from "./TrackerList";
 import TrackerSummary from "./TrackerSummary";
 import { TRACKER_STRINGS } from "./strings";
+import Section from "@/components/ui/Section";
 
 const field = "mt-1 block min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 py-2";
 const newId = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -55,8 +56,7 @@ export default function Tracker({ language, defaultBaseline, ambientUgm3, draft 
   }
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
-      <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
+    <Section title={t.heading}>
       <p className="mt-1 text-ink">{t.intro}</p>
       <div className="mt-3 max-w-xs">
         <label htmlFor={`${id}-base`} className="block font-medium">{t.baseline}</label>
@@ -91,6 +91,6 @@ export default function Tracker({ language, defaultBaseline, ambientUgm3, draft 
 
       <TrackerList state={state} language={language} onRemove={(tid) => setState((s) => removeTrip(s, tid))} onClear={() => setState((s) => ({ ...s, trips: [] }))} />
       <p className="mt-3 text-xs text-ink-muted">{t.storage}</p>
-    </section>
+    </Section>
   );
 }

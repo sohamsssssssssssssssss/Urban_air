@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { ApiError, fetchCompare } from "@/components/apiClient";
 import { errorMessage, type Language } from "@/lib/i18n";
 import type { Location } from "@/lib/profile";
@@ -11,12 +11,12 @@ import { compareSummary, defaultChoices, placeFromChoice } from "./logic";
 import { StoredChoicesSchema, type PlaceChoice } from "./schema";
 import type { CompareResult } from "./server";
 import { COMPARE_STRINGS } from "./strings";
+import Section from "@/components/ui/Section";
 
 const ready = (c: PlaceChoice) => c.kind === "city" || c.query.trim().length >= 2;
 
 /** Two places side by side. The last choices are remembered on this device. */
 export default function Compare({ location, language }: { location: Location; language: Language }) {
-  const id = useId();
   const t = COMPARE_STRINGS[language];
   const [choices, setChoices] = useStoredState("compare", StoredChoicesSchema, defaultChoices(location.city));
   const [result, setResult] = useState<CompareResult | null>(null);
@@ -39,8 +39,7 @@ export default function Compare({ location, language }: { location: Location; la
   const summary = result && compareSummary(result.a, result.b, language);
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
-      <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
+    <Section title={t.heading}>
       <p className="mt-1 text-ink">{t.intro}</p>
       <form onSubmit={submit} className="mt-4 grid gap-4 md:grid-cols-2">
         <ComparePlaceField n={1} choice={choices.a} onChange={(a) => setChoices((c) => ({ ...c, a }))} language={language} />
@@ -64,6 +63,6 @@ export default function Compare({ location, language }: { location: Location; la
           </>
         )}
       </div>
-    </section>
+    </Section>
   );
 }

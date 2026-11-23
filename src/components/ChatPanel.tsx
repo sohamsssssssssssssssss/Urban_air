@@ -6,6 +6,7 @@ import { UI, errorMessage, type Language } from "@/lib/i18n";
 import type { Location, UserProfile } from "@/lib/profile";
 import type { ChatTurn } from "@/lib/requests";
 import { ApiError, streamChatAnswer } from "./apiClient";
+import Section from "@/components/ui/Section";
 
 export interface ChatPanelProps {
   location: Location;
@@ -45,8 +46,7 @@ export default function ChatPanel({ location, profile, language }: ChatPanelProp
   }
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
-      <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
+    <Section title={t.heading}>
       <div role="log" aria-live="polite" aria-label={t.log}>
         <ol className="mt-3 grid gap-3">
         {turns.map((turn, i) => (
@@ -73,6 +73,6 @@ export default function ChatPanel({ location, profile, language }: ChatPanelProp
         </div>
         {error && <p id={`${id}-err`} role="alert" className="mt-2 text-sm font-medium text-danger-text">{error}</p>}
       </form>
-    </section>
+    </Section>
   );
 }

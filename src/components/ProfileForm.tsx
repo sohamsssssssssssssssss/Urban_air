@@ -5,6 +5,7 @@ import { CITIES, nearestCity, type CityName } from "@/lib/cities";
 import { COMMUTE_MODES, type CommuteMode } from "@/lib/commute";
 import { MODE_NAME, UI, type Language } from "@/lib/i18n";
 import type { Location, UserProfile } from "@/lib/profile";
+import Section from "@/components/ui/Section";
 
 const MAX_KM = 100;
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
@@ -67,8 +68,7 @@ export default function ProfileForm({ onSubmit, busy, language, onLanguageChange
   const toggle = (key: keyof typeof household) => setHousehold((h) => ({ ...h, [key]: !h[key] }));
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
-      <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
+    <Section title={t.heading}>
       <form onSubmit={submit} noValidate className="mt-4 grid gap-6 md:grid-cols-2">
         <fieldset>
           <legend className="font-semibold">{t.location}</legend>
@@ -158,6 +158,6 @@ export default function ProfileForm({ onSubmit, busy, language, onLanguageChange
           </button>
         </div>
       </form>
-    </section>
+    </Section>
   );
 }

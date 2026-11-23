@@ -9,6 +9,7 @@ import { TrackerStateSchema } from "../tracker/schema";
 import { CARD_HEIGHT, CARD_PERIODS, CARD_WIDTH, type CardPeriod } from "./constants";
 import { todayCardUrl, weeklyCardUrl, weeklyNumbers, type WeeklyNumbers } from "./logic";
 import { SHARE_STRINGS } from "./strings";
+import Section from "@/components/ui/Section";
 
 type Kind = "today" | "weekly";
 const field = "mt-1 block min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 py-2";
@@ -56,8 +57,7 @@ export default function ShareCard({ city: initialCity, language }: { city: CityN
   }
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
-      <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
+    <Section title={t.heading}>
       <p className="mt-1 text-ink">{t.intro}</p>
       <div className="mt-4 grid gap-4 md:grid-cols-3">
         <div>
@@ -103,7 +103,7 @@ export default function ShareCard({ city: initialCity, language }: { city: CityN
       </div>
       <p className="mt-3 text-xs text-ink-muted">{t.fallbackNote}</p>
       <p className="mt-1 text-xs text-ink-muted">{t.privacyShown} {t.privacyNever}</p>
-    </section>
+    </Section>
   );
 }
 
