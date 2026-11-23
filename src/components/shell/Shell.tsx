@@ -59,11 +59,11 @@ export default function Shell() {
             <LanguageSwitch language={app.language} onChange={app.setLanguage} />
           </div>
         </header>
-        <main id="main" tabIndex={-1} className="mx-auto grid min-h-[70dvh] max-w-shell gap-6 px-4 pb-40 pt-6 focus:outline-none lg:px-8 lg:pb-24">
+        <main id="main" tabIndex={-1} className="mx-auto grid min-h-[70dvh] grid-cols-1 max-w-shell gap-6 px-4 pb-40 pt-6 focus:outline-none lg:px-8 lg:pb-24">
           <div id={ALERT_SLOT_ID} />
           {SECTIONS.map((id) =>
             visited.has(id) ? (
-              <div key={id} hidden={active !== id} className="grid gap-6">
+              <div key={id} hidden={active !== id} className={active === id ? "grid grid-cols-1 gap-6" : "hidden"}>
                 <h1 ref={active === id ? heading : undefined} tabIndex={-1} className="text-3xl font-extrabold tracking-tight focus:outline-none">{t.titles[id]}</h1>
                 {panel(id)}
               </div>

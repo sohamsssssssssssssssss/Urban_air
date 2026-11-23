@@ -11,4 +11,4 @@ export function NeedsSetup({ language }: { language: Language }) {
 }
 
 /** Lazy-section placeholder with a fixed height so nothing jumps when the real card loads. */
-export const Lazy = ({ children }: { children: ReactNode }) => <div className="grid gap-6">{children}</div>;
+export const Lazy = ({ children }: { children: ReactNode }) => <div className="grid grid-cols-1 gap-6">{children}</div>;

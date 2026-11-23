@@ -15,7 +15,8 @@ export function useSection() {
 
   useEffect(() => {
     const sync = () => {
-      const next = sectionFromHash(window.location.hash);
+      const hash = window.location.hash;
+      const next = hash === "" ? DEFAULT_SECTION : sectionFromHash(hash); // back to the bare URL = the default section
       if (next === null) return; // e.g. "#main" from the skip link: stay where we are
       setActive(next);
       setVisited((v) => (v.has(next) ? v : new Set(v).add(next)));

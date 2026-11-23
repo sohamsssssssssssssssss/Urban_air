@@ -5,6 +5,7 @@ import { MASK_SOURCE, NIOSH_SOURCE } from "./constants";
 import { MASK_ACTIVITIES, maskFor } from "./logic";
 import { MASK_STRINGS } from "./strings";
 import Section from "@/components/ui/Section";
+import TableScroll from "@/components/ui/TableScroll";
 
 /** Lowest AQI of each CPCB band, used to fill the reference table. */
 const BAND_START: ReadonlyArray<[AqiCategory, number]> = [["Good", 0], ["Satisfactory", 51], ["Moderate", 101], ["Poor", 201], ["Very Poor", 301], ["Severe", 401]];
@@ -42,7 +43,8 @@ export default function MaskGuide({ snapshot, profile, language }: MaskGuideProp
       <h3 className="mt-4 font-semibold">{t.fitHeading}</h3>
       <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">{t.fitTips.map((tip) => <li key={tip}>{tip}</li>)}</ul>
 
-      <table className="mt-4 w-full text-left text-sm">
+      <TableScroll label={t.bandsCaption}>
+      <table className="w-full min-w-[34rem] text-left text-sm">
         <caption className="mb-1 text-left font-semibold">{t.bandsCaption}</caption>
         <thead>
           <tr className="border-b border-line">
@@ -60,6 +62,7 @@ export default function MaskGuide({ snapshot, profile, language }: MaskGuideProp
           ))}
         </tbody>
       </table>
+      </TableScroll>
 
       <p className="mt-3 text-xs text-ink-muted">{t.disclaimer}</p>
       <p className="mt-1 text-xs text-ink-muted">
