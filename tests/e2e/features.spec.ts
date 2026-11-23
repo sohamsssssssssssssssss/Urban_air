@@ -18,6 +18,13 @@ test("v2 feature smoke", async ({ page }) => {
     await expect(today).toContainText("close-fitted N95");
   });
 
+  await test.step("mask guide: N95 for commuting, children note, cited sources", async () => {
+    const guide = page.getByRole("region", { name: "Mask guide" });
+    await expect(guide).toContainText("Close-fitted N95/FFP2 (or N99)");
+    await expect(guide).toContainText("NIOSH has not approved any for children");
+    await expect(guide.getByRole("link", { name: /Ministry of Health and Family Welfare/ })).toBeVisible();
+  });
+
   await test.step("accessibility: no axe violations with all sections open", async () => {
     expect((await axeScan(page)).violations).toEqual([]);
   });
