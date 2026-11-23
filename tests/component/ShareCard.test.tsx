@@ -19,7 +19,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 const img = () => screen.getByRole("img") as HTMLImageElement;
-const stubFetch = (blob = new Blob([new Uint8Array([137, 80, 78, 71])], { type: "image/png" })) => vi.stubGlobal("fetch", vi.fn(async () => new Response(blob)));
+const stubFetch = (blob = new Blob([new Uint8Array([137, 80, 78, 71])], { type: "image/png" })) => vi.stubGlobal("fetch", vi.fn(async () => ({ blob: async () => blob })));
 
 describe("ShareCard", () => {
   it("previews today's card with a descriptive alt text and states what is and is not on it, with no axe violations", async () => {
