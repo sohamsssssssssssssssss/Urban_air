@@ -12,7 +12,7 @@ import TrackerList from "./TrackerList";
 import TrackerSummary from "./TrackerSummary";
 import { TRACKER_STRINGS } from "./strings";
 
-const field = "mt-1 block min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2";
+const field = "mt-1 block min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 py-2";
 const newId = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 export interface TrackerProps {
@@ -55,21 +55,21 @@ export default function Tracker({ language, defaultBaseline, ambientUgm3, draft 
   }
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
       <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
-      <p className="mt-1 text-slate-800">{t.intro}</p>
+      <p className="mt-1 text-ink">{t.intro}</p>
       <div className="mt-3 max-w-xs">
         <label htmlFor={`${id}-base`} className="block font-medium">{t.baseline}</label>
         <select id={`${id}-base`} className={field} value={state.baseline} aria-describedby={`${id}-base-hint`} onChange={(e) => setState((s) => ({ ...s, baseline: e.target.value as CommuteMode }))}>
           {COMMUTE_MODES.map((m) => <option key={m} value={m}>{MODE_NAME[language][m]}</option>)}
         </select>
-        <p id={`${id}-base-hint`} className="mt-1 text-sm text-slate-700">{t.baselineHint}</p>
+        <p id={`${id}-base-hint`} className="mt-1 text-sm text-ink-muted">{t.baselineHint}</p>
       </div>
       <TrackerSummary trips={state.trips} baseline={state.baseline} language={language} />
-      <p className="mt-2 text-xs text-slate-700">{t.estimatedNote}</p>
+      <p className="mt-2 text-xs text-ink-muted">{t.estimatedNote}</p>
 
       <h3 className="mt-4 font-semibold">{t.addHeading}</h3>
-      {fromRoute && <p className="mt-1 text-sm text-blue-900">{t.prefilled}</p>}
+      {fromRoute && <p className="mt-1 text-sm text-brand-text">{t.prefilled}</p>}
       <form onSubmit={submit} className="mt-2 grid gap-3 sm:grid-cols-4 sm:items-end">
         <div>
           <label htmlFor={`${id}-date`} className="block font-medium">{t.date}</label>
@@ -85,12 +85,12 @@ export default function Tracker({ language, defaultBaseline, ambientUgm3, draft 
           <label htmlFor={`${id}-km`} className="block font-medium">{t.km}</label>
           <input id={`${id}-km`} type="number" inputMode="decimal" min={0.1} max={100} step="0.1" className={field} value={km} required onChange={(e) => setKm(e.target.value)} />
         </div>
-        <button type="submit" className="min-h-11 rounded-md bg-blue-700 px-5 py-2 font-semibold text-white hover:bg-blue-800">{t.submit}</button>
+        <button type="submit" className="min-h-11 rounded-md bg-brand px-5 py-2 font-semibold text-brand-ink hover:bg-brand-hover">{t.submit}</button>
       </form>
       <p aria-live="polite" className="mt-2 min-h-6 text-sm font-medium">{message}</p>
 
       <TrackerList state={state} language={language} onRemove={(tid) => setState((s) => removeTrip(s, tid))} onClear={() => setState((s) => ({ ...s, trips: [] }))} />
-      <p className="mt-3 text-xs text-slate-700">{t.storage}</p>
+      <p className="mt-3 text-xs text-ink-muted">{t.storage}</p>
     </section>
   );
 }

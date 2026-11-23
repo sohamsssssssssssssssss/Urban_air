@@ -8,9 +8,9 @@ import { UI, type Language } from "@/lib/i18n";
 
 const TABS: Section[] = ["routines", "indoor", "alternatives"];
 const PRIORITY_STYLE: Record<AdviceItem["priority"], string> = {
-  high: "border-red-800 text-red-900",
-  medium: "border-amber-800 text-amber-900",
-  low: "border-slate-600 text-slate-800",
+  high: "border-danger text-danger-text",
+  medium: "border-warn text-warn-text",
+  low: "border-line-strong text-ink",
 };
 
 export interface AdviceTabsProps {
@@ -38,27 +38,27 @@ export default function AdviceTabs({ advice, generatedBy, fallbackReason = "othe
   }
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
       <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
-      <p className="mt-1 text-sm text-slate-700">
+      <p className="mt-1 text-sm text-ink-muted">
         {generatedBy === "gemini" ? t.byGemini : t.byRules(t.aiReasons[fallbackReason])}
       </p>
       <div>
         <p className="mt-3">{advice.summary}</p>
         <p className="mt-2 font-medium">
-          <span className="text-slate-700">{t.bestTime}</span>
+          <span className="text-ink-muted">{t.bestTime}</span>
           {advice.bestOutdoorWindow}
         </p>
       </div>
 
-      <div role="tablist" aria-label={t.tabsLabel} className="mt-4 flex flex-wrap gap-2 border-b border-slate-300" onKeyDown={onKeyDown}>
+      <div role="tablist" aria-label={t.tabsLabel} className="mt-4 flex flex-wrap gap-2 border-b border-line" onKeyDown={onKeyDown}>
         {TABS.map((key, i) => (
           <button
             key={key} ref={(el) => { tabRefs.current[i] = el; }} id={`${id}-tab-${key}`} role="tab" type="button"
             aria-selected={active === i} aria-controls={`${id}-panel-${key}`} tabIndex={active === i ? 0 : -1} onClick={() => setActive(i)}
-            className={`-mb-px min-h-11 rounded-t-md border-b-4 px-4 py-2 font-medium ${active === i ? "border-blue-700 text-blue-900" : "border-transparent text-slate-700 hover:text-slate-900"}`}
+            className={`-mb-px min-h-11 rounded-t-md border-b-4 px-4 py-2 font-medium ${active === i ? "border-brand text-brand-text" : "border-transparent text-ink-muted hover:text-ink"}`}
           >
-            {t.tabs[key]} <span className="text-slate-600">({advice[key].length})</span>
+            {t.tabs[key]} <span className="text-ink-muted">({advice[key].length})</span>
           </button>
         ))}
       </div>
@@ -79,17 +79,17 @@ export default function AdviceTabs({ advice, generatedBy, fallbackReason = "othe
 function Item({ item, language }: { item: AdviceItem; language: Language }) {
   const t = UI[language].plan;
   return (
-    <li className="rounded-lg border border-slate-200 p-4">
+    <li className="rounded-lg border border-line p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h3 className="font-semibold">{item.action}</h3>
         <span className={`rounded border px-2 py-0.5 text-xs font-semibold ${PRIORITY_STYLE[item.priority]}`}>{t.priority[item.priority]}</span>
       </div>
       <dl className="mt-2 grid gap-1 text-sm sm:grid-cols-[7rem_1fr]">
-        <dt className="font-semibold text-slate-700">{t.why}</dt>
+        <dt className="font-semibold text-ink-muted">{t.why}</dt>
         <dd>{item.why}</dd>
-        <dt className="font-semibold text-slate-700">{t.impact}</dt>
+        <dt className="font-semibold text-ink-muted">{t.impact}</dt>
         <dd>{item.impact}</dd>
-        <dt className="font-semibold text-slate-700">{t.forYou}</dt>
+        <dt className="font-semibold text-ink-muted">{t.forYou}</dt>
         <dd>{item.personalizedFor}</dd>
       </dl>
       {item.id && <TipFeedback tipId={item.id} language={language} />}

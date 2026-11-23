@@ -13,7 +13,7 @@ import { AlertSettingsSchema, type AlertSettings } from "./schema";
 import { ALERT_STRINGS } from "./strings";
 import { useAirAlerts } from "./useAirAlerts";
 
-const field = "mt-1 block min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2";
+const field = "mt-1 block min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 py-2";
 
 /** Alert settings, the honest "only while open" limit, an explicit permission button, and the in-app banner. */
 export default function AlertPanel({ location, language }: { location: Location; language: Language }) {
@@ -37,9 +37,9 @@ export default function AlertPanel({ location, language }: { location: Location;
   }
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
       <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
-      <p className="mt-1 rounded border border-amber-700 bg-amber-50 p-3 text-sm font-medium text-amber-950">{t.limit}</p>
+      <p className="mt-1 rounded border border-warn bg-warn-soft p-3 text-sm font-medium text-warn-text">{t.limit}</p>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <div>
           <label htmlFor={`${id}-city`} className="block font-medium">{t.city}</label>
@@ -57,21 +57,21 @@ export default function AlertPanel({ location, language }: { location: Location;
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         {/* constant label + aria-pressed: the name must not change with the state */}
-        <button type="button" aria-pressed={settings.enabled} onClick={() => save({ enabled: !settings.enabled, lastNotified: null })} className={`min-h-11 rounded-md border px-5 py-2 font-semibold ${settings.enabled ? "border-blue-800 bg-blue-700 text-white" : "border-slate-500 text-slate-900"}`}>
+        <button type="button" aria-pressed={settings.enabled} onClick={() => save({ enabled: !settings.enabled, lastNotified: null })} className={`min-h-11 rounded-md border px-5 py-2 font-semibold ${settings.enabled ? "border-brand bg-brand text-brand-ink" : "border-line-strong text-ink"}`}>
           {t.inApp}
         </button>
         <span className="font-semibold">{settings.enabled ? t.on : t.off}</span>
       </div>
-      <p aria-live="polite" className="mt-2 text-sm text-slate-800">
+      <p aria-live="polite" className="mt-2 text-sm text-ink">
         {!settings.enabled ? "" : state.failed ? t.checkFailed : state.snapshot && state.checkedAt ? t.status(formatIST(new Date(state.checkedAt).toISOString()), state.snapshot.aqi) : t.checking}
       </p>
 
       <div className="mt-4">
         <p className="font-medium">{t.browser}</p>
-        <p className="mt-1 text-sm text-slate-800">{t.permission[permission]}</p>
-        {permission === "default" && <button type="button" onClick={allow} className="mt-2 min-h-11 rounded-md border border-blue-700 px-4 py-2 font-medium text-blue-800 hover:bg-blue-50">{t.allow}</button>}
+        <p className="mt-1 text-sm text-ink">{t.permission[permission]}</p>
+        {permission === "default" && <button type="button" onClick={allow} className="mt-2 min-h-11 rounded-md border border-brand px-4 py-2 font-medium text-brand-text hover:bg-brand-soft">{t.allow}</button>}
       </div>
-      <p className="mt-3 text-xs text-slate-700">{t.install}</p>
+      <p className="mt-3 text-xs text-ink-muted">{t.install}</p>
 
       {settings.enabled && state.above && state.snapshot && dismissed !== readingKey && (
         <AlertBanner snapshot={state.snapshot} city={settings.city} threshold={settings.threshold} language={language} onDismiss={() => setDismissed(readingKey)} />

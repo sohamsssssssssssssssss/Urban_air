@@ -15,9 +15,9 @@ export default function TrackerSummary({ trips, baseline, language }: { trips: T
       {PERIODS.map((period) => {
         const x = totals(trips, baseline, period);
         return (
-          <li key={period} className="rounded-lg border border-slate-300 p-3">
+          <li key={period} className="rounded-lg border border-line p-3">
             <h3 className="font-semibold">{t.periods[period]}</h3>
-            <p className="text-sm text-slate-700">{t.trips(x.trips)} · {t.distance(r1(x.km))}</p>
+            <p className="text-sm text-ink-muted">{t.trips(x.trips)} · {t.distance(r1(x.km))}</p>
             <p className="mt-1 font-semibold">{x.co2AvoidedKg >= 0 ? t.co2Avoided(r1(x.co2AvoidedKg)) : t.co2Extra(r1(-x.co2AvoidedKg))}</p>
             <p className="text-sm">{x.pm25AvoidedUg === null ? t.pmUnknown : x.pm25AvoidedUg >= 0 ? t.pmAvoided(r1(x.pm25AvoidedUg)) : t.pmExtra(r1(-x.pm25AvoidedUg))}</p>
           </li>

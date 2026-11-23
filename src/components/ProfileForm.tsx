@@ -8,9 +8,9 @@ import type { Location, UserProfile } from "@/lib/profile";
 
 const MAX_KM = 100;
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
-const field = "mt-1 block min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2";
+const field = "mt-1 block min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 py-2";
 const checkRow = "flex min-h-11 items-center gap-3";
-const box = "h-5 w-5 accent-blue-700";
+const box = "h-5 w-5 accent-brand";
 
 export interface ProfileFormProps {
   onSubmit: (location: Location, profile: UserProfile, language: Language) => void;
@@ -67,7 +67,7 @@ export default function ProfileForm({ onSubmit, busy, language, onLanguageChange
   const toggle = (key: keyof typeof household) => setHousehold((h) => ({ ...h, [key]: !h[key] }));
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
       <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
       <form onSubmit={submit} noValidate className="mt-4 grid gap-6 md:grid-cols-2">
         <fieldset>
@@ -76,10 +76,10 @@ export default function ProfileForm({ onSubmit, busy, language, onLanguageChange
           <select id={`${id}-city`} className={field} value={city} onChange={(e) => { setCity(e.target.value as CityName); setGeo(null); setGeoMsg(""); }}>
             {CITIES.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
           </select>
-          <button type="button" onClick={locate} className="mt-2 min-h-11 rounded-md border border-blue-700 px-4 py-2 font-medium text-blue-800 hover:bg-blue-50">
+          <button type="button" onClick={locate} className="mt-2 min-h-11 rounded-md border border-brand px-4 py-2 font-medium text-brand-text hover:bg-brand-soft">
             {t.useLocation}
           </button>
-          <p aria-live="polite" className="mt-1 text-sm text-slate-700">{geoMsg}</p>
+          <p aria-live="polite" className="mt-1 text-sm text-ink-muted">{geoMsg}</p>
         </fieldset>
 
         <fieldset>
@@ -103,7 +103,7 @@ export default function ProfileForm({ onSubmit, busy, language, onLanguageChange
             id={`${id}-km`} type="number" inputMode="decimal" min={0} max={MAX_KM} step="0.5" className={field} value={km}
             onChange={(e) => setKm(e.target.value)} aria-invalid={kmError ? true : undefined} aria-describedby={kmError ? `${id}-km-err` : `${id}-km-hint`}
           />
-          {kmError ? <p id={`${id}-km-err`} className="mt-1 text-sm font-medium text-red-800">{kmError}</p> : <p id={`${id}-km-hint`} className="mt-1 text-sm text-slate-700">{t.kmHint}</p>}
+          {kmError ? <p id={`${id}-km-err`} className="mt-1 text-sm font-medium text-danger-text">{kmError}</p> : <p id={`${id}-km-hint`} className="mt-1 text-sm text-ink-muted">{t.kmHint}</p>}
           <div className="mt-3 grid grid-cols-2 gap-3">
             <div>
               <label htmlFor={`${id}-start`} className="block">{t.workStart}</label>
@@ -153,7 +153,7 @@ export default function ProfileForm({ onSubmit, busy, language, onLanguageChange
         </div>
 
         <div className="md:col-span-2">
-          <button type="submit" disabled={busy} className="min-h-11 rounded-md bg-blue-700 px-6 py-2 font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-500">
+          <button type="submit" disabled={busy} className="min-h-11 rounded-md bg-brand px-6 py-2 font-semibold text-brand-ink hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink-muted disabled:border-line">
             {busy ? t.submitting : t.submit}
           </button>
         </div>

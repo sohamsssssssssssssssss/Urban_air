@@ -26,26 +26,26 @@ export default function Checklist({ snapshot, profile, language }: ChecklistProp
   const ticked = tickedToday(state, items);
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
       <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
-      <p className="mt-1 text-slate-800">{t.intro}</p>
+      <p className="mt-1 text-ink">{t.intro}</p>
       <p aria-live="polite" className="mt-2 font-semibold">{t.progress(ticked.length, items.length)}</p>
       <fieldset className="mt-2">
         <legend className="sr-only">{t.groupLabel}</legend>
         <ul className="grid gap-3">
           {items.map((item) => (
-            <li key={item.id} className="rounded-lg border border-slate-200 p-3">
+            <li key={item.id} className="rounded-lg border border-line p-3">
               <label className="flex min-h-11 items-start gap-3">
                 <input
-                  type="checkbox" className="mt-1 h-5 w-5 accent-blue-700" checked={ticked.includes(item.id)}
+                  type="checkbox" className="mt-1 h-5 w-5 accent-brand" checked={ticked.includes(item.id)}
                   onChange={() => setState((prev) => toggleItem(prev, items, item.id))}
                 />
                 <span className="font-medium">{item.action}</span>
               </label>
               <dl className="mt-1 grid gap-1 pl-8 text-sm sm:grid-cols-[5rem_1fr]">
-                <dt className="font-semibold text-slate-700">{t.why}</dt>
+                <dt className="font-semibold text-ink-muted">{t.why}</dt>
                 <dd>{item.why}</dd>
-                <dt className="font-semibold text-slate-700">{t.impact}</dt>
+                <dt className="font-semibold text-ink-muted">{t.impact}</dt>
                 <dd>{item.impact}</dd>
               </dl>
             </li>
@@ -53,10 +53,10 @@ export default function Checklist({ snapshot, profile, language }: ChecklistProp
         </ul>
       </fieldset>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <button type="button" onClick={() => setState({ day: istDayKey(), checked: [] })} className="min-h-11 rounded-md border border-blue-700 px-4 py-2 font-medium text-blue-800 hover:bg-blue-50">
+        <button type="button" onClick={() => setState({ day: istDayKey(), checked: [] })} className="min-h-11 rounded-md border border-brand px-4 py-2 font-medium text-brand-text hover:bg-brand-soft">
           {t.uncheckAll}
         </button>
-        <p className="text-xs text-slate-700">{t.storage}</p>
+        <p className="text-xs text-ink-muted">{t.storage}</p>
       </div>
     </section>
   );

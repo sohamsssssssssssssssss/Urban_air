@@ -22,12 +22,12 @@ export default function AlertBanner({ snapshot, city, threshold, language, onDis
   const t = ALERT_STRINGS[language];
   const slot = typeof document === "undefined" ? null : document.getElementById(ALERT_SLOT_ID);
   const banner = (
-    <div role="alert" className="flex flex-wrap items-start justify-between gap-3 rounded-xl border-2 border-red-900 bg-red-50 p-4 text-red-950">
+    <div role="alert" className="flex flex-wrap items-start justify-between gap-3 rounded-xl border-2 border-danger bg-danger-soft p-4 text-danger-text">
       <div>
         <p className="font-bold">{t.bannerTitle({ aqi: snapshot.aqi, category: CATEGORY_LABEL[language][snapshot.category], city })}</p>
         <p className="text-sm">{t.bannerBody({ threshold, station: snapshot.station.name, time: formatIST(snapshot.measuredAt) })}</p>
       </div>
-      <button type="button" onClick={onDismiss} className="min-h-11 rounded-md border border-red-900 px-4 py-2 font-medium hover:bg-red-100">{t.dismiss}</button>
+      <button type="button" onClick={onDismiss} className="min-h-11 rounded-md border border-danger px-4 py-2 font-medium hover:bg-danger-soft">{t.dismiss}</button>
     </div>
   );
   return slot ? createPortal(banner, slot) : banner;

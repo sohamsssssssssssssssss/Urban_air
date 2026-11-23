@@ -27,13 +27,13 @@ export default function TipFeedback({ tipId, language }: { tipId: string; langua
 
   return (
     <div role="group" aria-label={t.group} className="mt-3 flex flex-wrap items-center gap-2">
-      <span className="text-sm text-slate-700">{t.group}</span>
+      <span className="text-sm text-ink-muted">{t.group}</span>
       {([["up", t.helpful], ["down", t.notUseful]] as const).map(([value, label]) => (
-        <button key={value} type="button" aria-pressed={vote === value} onClick={() => choose(value)} className={`${btn} ${vote === value ? "border-blue-800 bg-blue-100 text-blue-950" : "border-slate-400 text-slate-900 hover:bg-slate-100"}`}>
+        <button key={value} type="button" aria-pressed={vote === value} onClick={() => choose(value)} className={`${btn} ${vote === value ? "border-brand bg-brand-soft text-brand-text" : "border-line-strong text-ink hover:bg-sunken"}`}>
           {label}
         </button>
       ))}
-      <span aria-live="polite" className="text-xs text-slate-700">{sent ? t.thanks : ""}</span>
+      <span aria-live="polite" className="text-xs text-ink-muted">{sent ? t.thanks : ""}</span>
     </div>
   );
 }

@@ -9,10 +9,10 @@ import type { CompareSide } from "./server";
 export default function CompareCard({ side, language }: { side: CompareSide; language: Language }) {
   const t = COMPARE_STRINGS[language];
   return (
-    <li className="rounded-lg border border-slate-300 p-4">
+    <li className="rounded-lg border border-line p-4">
       <h3 className="text-lg font-semibold">{side.label}</h3>
       {side.status === "unavailable" ? (
-        <p role="alert" className="mt-2 rounded border border-slate-500 bg-slate-100 p-2 text-sm">{t.sideError[side.code]}</p>
+        <p role="alert" className="mt-2 rounded border border-line-strong bg-sunken p-2 text-sm">{t.sideError[side.code]}</p>
       ) : (
         <>
           <p className="mt-2 flex flex-wrap items-center gap-3">
@@ -24,7 +24,7 @@ export default function CompareCard({ side, language }: { side: CompareSide; lan
             <div><dt className="inline font-semibold">{t.bestWindow}: </dt><dd className="inline">{side.windowMeasured ? "" : `${t.windowUsual} `}{side.bestWindow}</dd></div>
             <div><dt className="inline font-semibold">{t.station}: </dt><dd className="inline">{side.station} · {formatIST(side.measuredAt)} · {side.source}</dd></div>
           </dl>
-          {side.stale && <p className="mt-2 text-sm font-medium text-amber-900">{t.stale}</p>}
+          {side.stale && <p className="mt-2 text-sm font-medium text-warn-text">{t.stale}</p>}
         </>
       )}
     </li>

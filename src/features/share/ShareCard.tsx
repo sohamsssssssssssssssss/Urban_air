@@ -11,7 +11,7 @@ import { todayCardUrl, weeklyCardUrl, weeklyNumbers, type WeeklyNumbers } from "
 import { SHARE_STRINGS } from "./strings";
 
 type Kind = "today" | "weekly";
-const field = "mt-1 block min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2";
+const field = "mt-1 block min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 py-2";
 const btn = "min-h-11 rounded-md border px-5 py-2 font-semibold";
 const EMPTY = { baseline: "car" as const, trips: [] };
 
@@ -56,9 +56,9 @@ export default function ShareCard({ city: initialCity, language }: { city: CityN
   }
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
       <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
-      <p className="mt-1 text-slate-800">{t.intro}</p>
+      <p className="mt-1 text-ink">{t.intro}</p>
       <div className="mt-4 grid gap-4 md:grid-cols-3">
         <div>
           <label htmlFor={`${id}-kind`} className="block font-medium">{t.kind}</label>
@@ -84,25 +84,25 @@ export default function ShareCard({ city: initialCity, language }: { city: CityN
         )}
       </div>
 
-      {noTrips ? <p className="mt-4 rounded border border-slate-400 bg-slate-50 p-3">{t.noTrips}</p> : (
+      {noTrips ? <p className="mt-4 rounded border border-line-strong bg-sunken p-3">{t.noTrips}</p> : (
         <figure className="mt-4">
           <figcaption className="sr-only">{t.preview}</figcaption>
           {imageError ? (
-            <p role="alert" className="rounded border border-red-800 bg-red-50 p-3 text-red-900">{t.imageFailed}</p>
+            <p role="alert" className="rounded border border-danger bg-danger-soft p-3 text-danger-text">{t.imageFailed}</p>
           ) : (
             // eslint-disable-next-line @next/next/no-img-element -- a generated PNG from our own API; next/image would only re-encode it
-            <img src={url} alt={alt} width={CARD_WIDTH} height={CARD_HEIGHT} loading="lazy" onError={() => setImageError(true)} className="h-auto w-full rounded-lg border border-slate-300" />
+            <img src={url} alt={alt} width={CARD_WIDTH} height={CARD_HEIGHT} loading="lazy" onError={() => setImageError(true)} className="h-auto w-full rounded-lg border border-line" />
           )}
         </figure>
       )}
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <button type="button" onClick={share} disabled={busy || noTrips || imageError} className={`${btn} border-blue-800 bg-blue-700 text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:border-slate-500 disabled:bg-slate-500`}>{t.share}</button>
-        {noTrips || imageError ? null : <a href={url} download="smogsense-card.png" className={`${btn} inline-flex items-center border-blue-700 text-blue-800 hover:bg-blue-50`}>{t.download}</a>}
+        <button type="button" onClick={share} disabled={busy || noTrips || imageError} className={`${btn} border-brand bg-brand text-brand-ink hover:bg-brand-hover disabled:cursor-not-allowed  disabled:bg-sunken disabled:text-ink-muted disabled:border-line`}>{t.share}</button>
+        {noTrips || imageError ? null : <a href={url} download="smogsense-card.png" className={`${btn} inline-flex items-center border-brand text-brand-text hover:bg-brand-soft`}>{t.download}</a>}
         <span aria-live="polite" className="text-sm font-medium">{message}</span>
       </div>
-      <p className="mt-3 text-xs text-slate-700">{t.fallbackNote}</p>
-      <p className="mt-1 text-xs text-slate-700">{t.privacyShown} {t.privacyNever}</p>
+      <p className="mt-3 text-xs text-ink-muted">{t.fallbackNote}</p>
+      <p className="mt-1 text-xs text-ink-muted">{t.privacyShown} {t.privacyNever}</p>
     </section>
   );
 }

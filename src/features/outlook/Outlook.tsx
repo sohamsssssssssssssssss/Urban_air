@@ -32,15 +32,15 @@ export default function Outlook({ location, language }: { location: Location; la
   }, [location, language, attempt]);
 
   return (
-    <section aria-labelledby={`${id}-h`} aria-busy={!data && !error} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section aria-labelledby={`${id}-h`} aria-busy={!data && !error} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
       <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
-      <p className="mt-1 inline-block rounded border-2 border-amber-800 bg-amber-50 px-2 py-1 text-sm font-semibold text-amber-950">{t.badge}</p>
-      <p className="mt-2 text-slate-800">{t.intro}</p>
-      {!data && !error && <p className="mt-3 text-slate-700">{t.loading}</p>}
+      <p className="mt-1 inline-block rounded border-2 border-warn bg-warn-soft px-2 py-1 text-sm font-semibold text-warn-text">{t.badge}</p>
+      <p className="mt-2 text-ink">{t.intro}</p>
+      {!data && !error && <p className="mt-3 text-ink-muted">{t.loading}</p>}
       {error && (
-        <div role="alert" className="mt-3 rounded-lg border border-red-800 bg-red-50 p-3 text-red-900">
+        <div role="alert" className="mt-3 rounded-lg border border-danger bg-danger-soft p-3 text-danger-text">
           <p>{error}</p>
-          <button type="button" onClick={retry} className="mt-2 min-h-11 rounded-md border border-red-800 px-4 py-2 font-medium hover:bg-red-100">{t.retry}</button>
+          <button type="button" onClick={retry} className="mt-2 min-h-11 rounded-md border border-danger px-4 py-2 font-medium hover:bg-danger-soft">{t.retry}</button>
         </div>
       )}
       {data && (
@@ -51,16 +51,16 @@ export default function Outlook({ location, language }: { location: Location; la
               {data.windows.map((w) => <li key={w.rank}>{t.windowLine({ when: formatWindowWhen(w, language), avg: w.avgPm25, category: CATEGORY_LABEL[language][w.category] })}</li>)}
             </ol>
           )}
-          <p className="mt-1 text-xs text-slate-700">{t.estimateNote}</p>
+          <p className="mt-1 text-xs text-ink-muted">{t.estimateNote}</p>
           <OutlookChart hours={data.hours} windows={data.windows} language={language} />
           <details className="mt-3">
-            <summary className="min-h-11 cursor-pointer py-2 font-medium text-blue-800">{t.showTable}</summary>
+            <summary className="min-h-11 cursor-pointer py-2 font-medium text-brand-text">{t.showTable}</summary>
             <div className="max-h-72 overflow-auto" tabIndex={0} role="region" aria-label={t.showTable}>
               <table className="w-full text-left text-sm">
-                <thead><tr className="border-b border-slate-300">{[t.colTime, t.colPm25, t.colPm10].map((h) => <th key={h} scope="col" className="py-1 pr-3">{h}</th>)}</tr></thead>
+                <thead><tr className="border-b border-line">{[t.colTime, t.colPm25, t.colPm10].map((h) => <th key={h} scope="col" className="py-1 pr-3">{h}</th>)}</tr></thead>
                 <tbody>
                   {data.hours.map((h) => (
-                    <tr key={h.at} className="border-b border-slate-100">
+                    <tr key={h.at} className="border-b border-line">
                       <th scope="row" className="py-1 pr-3 font-normal">{formatWhen(h.at, language)}</th>
                       <td className="py-1 pr-3 tabular-nums">{h.pm25 ?? "—"}</td>
                       <td className="py-1 tabular-nums">{h.pm10 ?? "—"}</td>
@@ -72,7 +72,7 @@ export default function Outlook({ location, language }: { location: Location; la
           </details>
         </>
       )}
-      <p className="mt-3 text-xs text-slate-700">{t.attribution}</p>
+      <p className="mt-3 text-xs text-ink-muted">{t.attribution}</p>
     </section>
   );
 }

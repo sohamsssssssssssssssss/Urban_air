@@ -39,21 +39,21 @@ export default function Compare({ location, language }: { location: Location; la
   const summary = result && compareSummary(result.a, result.b, language);
 
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section aria-labelledby={`${id}-h`} className="rounded-xl border border-line bg-surface p-5 shadow-sm">
       <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
-      <p className="mt-1 text-slate-800">{t.intro}</p>
+      <p className="mt-1 text-ink">{t.intro}</p>
       <form onSubmit={submit} className="mt-4 grid gap-4 md:grid-cols-2">
         <ComparePlaceField n={1} choice={choices.a} onChange={(a) => setChoices((c) => ({ ...c, a }))} language={language} />
         <ComparePlaceField n={2} choice={choices.b} onChange={(b) => setChoices((c) => ({ ...c, b }))} language={language} />
         <div className="md:col-span-2">
-          <button type="submit" disabled={busy || !ready(choices.a) || !ready(choices.b)} className="min-h-11 rounded-md bg-blue-700 px-6 py-2 font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-500">
+          <button type="submit" disabled={busy || !ready(choices.a) || !ready(choices.b)} className="min-h-11 rounded-md bg-brand px-6 py-2 font-semibold text-brand-ink hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink-muted disabled:border-line">
             {busy ? t.submitting : t.submit}
           </button>
-          <p className="mt-2 text-xs text-slate-700">{t.storage}</p>
+          <p className="mt-2 text-xs text-ink-muted">{t.storage}</p>
         </div>
       </form>
       <div aria-live="polite" aria-busy={busy}>
-        {error && <p role="alert" className="mt-3 rounded-lg border border-red-800 bg-red-50 p-3 text-red-900">{error}</p>}
+        {error && <p role="alert" className="mt-3 rounded-lg border border-danger bg-danger-soft p-3 text-danger-text">{error}</p>}
         {result && (
           <>
             {summary && <p className="mt-4 text-lg font-semibold">{summary}</p>}

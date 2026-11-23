@@ -13,7 +13,7 @@ const CATEGORY_STYLE: Record<AqiCategory, string> = {
   Satisfactory: "bg-lime-50 border-lime-700",
   Moderate: "bg-yellow-50 border-yellow-600",
   Poor: "bg-orange-50 border-orange-600",
-  "Very Poor": "bg-red-50 border-red-700",
+  "Very Poor": "bg-danger-soft border-danger",
   Severe: "bg-rose-100 border-rose-900",
 };
 
@@ -21,15 +21,15 @@ const CATEGORY_STYLE: Record<AqiCategory, string> = {
 export default function AqiCard({ state, language = "en" }: { state: AirState; language?: Language }) {
   const t = UI[language].card;
   return (
-    <section aria-labelledby="aqi-heading" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section aria-labelledby="aqi-heading" className="rounded-xl border border-line bg-surface p-5 shadow-sm">
       <h2 id="aqi-heading" className="text-xl font-semibold">{t.heading}</h2>
       <div aria-live="polite" aria-busy={state.status === "loading"} className="mt-3">
-        {state.status === "idle" && <p className="text-slate-700">{t.idle}</p>}
-        {state.status === "loading" && <p className="text-slate-700">{t.loading}</p>}
+        {state.status === "idle" && <p className="text-ink-muted">{t.idle}</p>}
+        {state.status === "loading" && <p className="text-ink-muted">{t.loading}</p>}
         {state.status === "unavailable" && (
-          <div role="alert" className="rounded-lg border-2 border-slate-500 bg-slate-100 p-4">
+          <div role="alert" className="rounded-lg border-2 border-line-strong bg-sunken p-4">
             <p className="font-semibold">{t.unavailableTitle}</p>
-            <p className="mt-1 text-slate-800">{state.message} {t.unavailableBody}</p>
+            <p className="mt-1 text-ink">{state.message} {t.unavailableBody}</p>
           </div>
         )}
         {state.status === "ready" && <Reading snapshot={state.snapshot} language={language} />}
@@ -55,25 +55,25 @@ function Reading({ snapshot: s, language }: { snapshot: AQSnapshot; language: La
             <CategoryIcon category={s.category} />
             {CATEGORY_LABEL[language][s.category]}
           </p>
-          <p className="text-slate-800">{HEALTH_IMPACT[language][s.category]}</p>
+          <p className="text-ink">{HEALTH_IMPACT[language][s.category]}</p>
         </div>
       </div>
-      <p className="mt-3 text-sm text-slate-700">
+      <p className="mt-3 text-sm text-ink-muted">
         {t.meta(s.station.name, formatIST(s.measuredAt), s.source)} {t.dominant(POLLUTANT_LABEL[s.dominant])}
       </p>
-      {s.provisional && <p className="mt-2 text-sm text-amber-900">{t.provisionalDetail}</p>}
-      {s.sensorType === "low-cost" && <p className="mt-2 text-sm text-slate-700">{t.lowCost}</p>}
-      <p className="mt-3 text-sm text-slate-800">
+      {s.provisional && <p className="mt-2 text-sm text-warn-text">{t.provisionalDetail}</p>}
+      {s.sensorType === "low-cost" && <p className="mt-2 text-sm text-ink-muted">{t.lowCost}</p>}
+      <p className="mt-3 text-sm text-ink">
         <strong>{t.lastHour}</strong>{" · "}
         {s.pollutants.pm25 !== undefined
           ? `${Math.round(s.pollutants.pm25)} µg/m³ · ${formatIST(s.pm25MeasuredAt ?? s.measuredAt)}`
           : t.noHourlyPm25}
       </p>
-      {s.stale && <p className="mt-2 rounded border border-amber-700 bg-amber-50 p-2 text-sm font-medium text-amber-900">{t.stale}</p>}
+      {s.stale && <p className="mt-2 rounded border border-warn bg-warn-soft p-2 text-sm font-medium text-warn-text">{t.stale}</p>}
       <table className="mt-4 w-full max-w-md text-left text-sm">
         <caption className="sr-only">{t.caption}</caption>
         <thead>
-          <tr className="border-b border-slate-300">
+          <tr className="border-b border-line">
             <th scope="col" className="py-1 pr-4">{t.pollutant}</th>
             <th scope="col" className="py-1 pr-4">{t.concentration}</th>
             <th scope="col" className="py-1">{t.subIndex}</th>
@@ -81,7 +81,7 @@ function Reading({ snapshot: s, language }: { snapshot: AQSnapshot; language: La
         </thead>
         <tbody>
           {rows.map((p) => (
-            <tr key={p} className="border-b border-slate-100">
+            <tr key={p} className="border-b border-line">
               <th scope="row" className="py-1 pr-4 font-medium">{POLLUTANT_LABEL[p]}</th>
               <td className="py-1 pr-4 tabular-nums">{s.pollutants[p] === undefined ? <NotAvailable label={t.notAvailable} text={missing} /> : formatConcentration(p, s.pollutants[p])}</td>
               <td className="py-1 tabular-nums">{s.subIndices[p] ?? <NotAvailable label={t.notAvailable} text={missing} />}</td>
@@ -89,7 +89,7 @@ function Reading({ snapshot: s, language }: { snapshot: AQSnapshot; language: La
           ))}
         </tbody>
       </table>
-      {rows.some((p) => s.pollutants[p] === undefined) && <p className="mt-2 text-xs text-slate-700">{missing}</p>}
+      {rows.some((p) => s.pollutants[p] === undefined) && <p className="mt-2 text-xs text-ink-muted">{missing}</p>}
     </div>
   );
 }

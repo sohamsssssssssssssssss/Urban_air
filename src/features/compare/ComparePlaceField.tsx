@@ -6,7 +6,7 @@ import type { PlaceChoice } from "./schema";
 import { COMPARE_STRINGS } from "./strings";
 
 const OTHER = "__other";
-const field = "mt-1 block min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2";
+const field = "mt-1 block min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 py-2";
 
 export interface ComparePlaceFieldProps {
   n: 1 | 2;
@@ -36,7 +36,7 @@ export default function ComparePlaceField({ n, choice, onChange, language }: Com
             id={`${id}-text`} className={field} value={choice.query} maxLength={ROUTE_PLACE_MAX_CHARS} autoComplete="off"
             aria-describedby={`${id}-hint`} onChange={(e) => onChange({ kind: "text", query: e.target.value })}
           />
-          <p id={`${id}-hint`} className="mt-1 text-sm text-slate-700">{t.otherHint}</p>
+          <p id={`${id}-hint`} className="mt-1 text-sm text-ink-muted">{t.otherHint}</p>
         </>
       )}
     </div>

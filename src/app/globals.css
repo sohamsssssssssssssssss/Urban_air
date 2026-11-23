@@ -2,18 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: light;
-}
-
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-canvas font-sans text-ink antialiased;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Always-visible, high-contrast keyboard focus. */
+/* Always-visible keyboard focus, in a colour that has 3:1 contrast on both themes. */
 :focus-visible {
-  outline: 3px solid #1d4ed8;
+  outline: 3px solid rgb(var(--c-focus));
   outline-offset: 2px;
+}
+
+/* Native <dialog> backdrop follows the theme. */
+dialog::backdrop {
+  background: rgb(var(--c-shadow) / 0.55);
 }
 
 @media (prefers-reduced-motion: reduce) {
