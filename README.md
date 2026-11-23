@@ -4,7 +4,11 @@
 
 Built for PromptWars Virtual Challenge 6 (Google × Hack2skill).
 
-**Live demo:** [smogsense-zeta.vercel.app](https://smogsense-zeta.vercel.app)
+**Live demo:** [smogsense-zeta.vercel.app](https://smogsense-zeta.vercel.app) (v2: redesigned app shell plus ten features; the first submitted version is tagged `v1-submitted`)
+
+| Today (desktop, light) | Plan (mobile, light) | Routes (desktop, dark) |
+|---|---|---|
+| ![Today: AQI hero, one-line summary, mask guide, checklist](docs/screenshots/1280-light-today.webp) | ![Plan: tip cards with priority pills and impact bars](docs/screenshots/320-light-plan.webp) | ![Routes: cleaner-route planner in dark mode](docs/screenshots/1280-dark-routes.webp) |
 
 ## Problem
 
@@ -82,12 +86,14 @@ API integration tests simulate Gemini HTTP 429 and 503. Chat responds with HTTP 
 
 ## Lighthouse
 
-Lighthouse 13.6.0 audited the production homepage on 22 Nov 2026.
+Lighthouse 13.6.0 audited the production homepage (v2, `smogsense-zeta.vercel.app`) on 23 Nov 2026.
 
-| Profile | Performance | Accessibility | Best Practices | SEO |
-|---|---:|---:|---:|---:|
-| Mobile | 100 | 100 | 100 | 100 |
-| Desktop | 100 | 100 | 100 | 100 |
+| Profile | Performance | Accessibility | Best Practices | SEO | CLS |
+|---|---:|---:|---:|---:|---:|
+| Mobile | 94 | 100 | 100 | 100 | 0 |
+| Desktop | 100 | 100 | 100 | 100 | 0.027 |
+
+The v1 submission scored 100 on every category before the redesign; the v2 shell adds sections, so mobile performance is 94 (LCP 3.1 s, TBT 50 ms).
 
 **v2 build** (all ten features), audited on 23 Nov 2026 against a local production build of the same commit, because Vercel preview deployments sit behind a login: Performance 100 / Accessibility 100 / Best Practices 100 / SEO 100 on both mobile and desktop (FCP 0.8 s, LCP 0.8 s, TBT 20 ms, CLS 0 on mobile). First-load JS is 120 kB: every new section is a lazy chunk. An earlier v2 build scored 96 on Best Practices because Zod 4 probes for `new Function`, which our CSP forbids and Chrome logs as an issue; client code now uses a Zod copy with JIT off (`src/features/shared/zod.ts`, with a test that keeps it that way). Chrome's issue log and console were also clean across the full flow (submit, forecast, compare, alerts, tracker, share).
 
