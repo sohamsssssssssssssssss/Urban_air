@@ -14,7 +14,7 @@ export default function KidModeToggle({ enabled, busy, language, onChange }: Kid
   const id = useId();
   const t = KIDS_STRINGS[language];
   return (
-    <div className="rounded-xl border border-line bg-surface p-4 shadow-sm">
+    <div className="rounded-card border border-line bg-surface p-4 shadow-card">
       <label className="flex min-h-11 items-center gap-3 font-semibold">
         <input type="checkbox" className="h-5 w-5 accent-brand" checked={enabled} disabled={busy} aria-describedby={`${id}-hint`} onChange={(e) => onChange(e.target.checked)} />
         {t.label}

@@ -21,3 +21,8 @@ export function historyExtremes(history: HourlyPoint[]): { low: HourlyPoint; hig
   if (history.length === 0) return null;
   return { low: history.reduce((a, b) => (b.pm25 < a.pm25 ? b : a)), high: history.reduce((a, b) => (b.pm25 > a.pm25 ? b : a)) };
 }
+
+/** "14:30" in India time. */
+export function clockIST(iso: string): string {
+  return new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Asia/Kolkata" }).format(new Date(iso));
+}

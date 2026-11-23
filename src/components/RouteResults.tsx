@@ -21,7 +21,7 @@ export default function RouteResults({ result, language, onLogTrip }: { result: 
       {result.approximate && <p className="mt-2 rounded border border-warn bg-warn-soft p-2 text-sm font-medium text-warn-text">{t.approximate}</p>}
       <ul className="mt-4 grid gap-4 md:grid-cols-3">
         {result.cards.map(({ route, labels, reason }) => (
-          <li key={route.id} className="rounded-lg border border-line p-4">
+          <li key={route.id} className="rounded-control border border-line p-4">
             <p className="flex flex-wrap gap-2">
               {labels.map((label) => <span key={label} className="rounded border border-brand px-2 py-0.5 text-xs font-semibold text-brand-text">{t.labels[label]}</span>)}
             </p>
@@ -60,7 +60,7 @@ export default function RouteResults({ result, language, onLogTrip }: { result: 
               <td className="py-1 pr-3 text-xs">{r.roadAdjustment === "applied" ? t.roadApplied(Math.round(r.majorShare * 100)) : t.roadNot}</td>
               {onLogTrip && (
                 <td className="py-1">
-                  <button type="button" onClick={() => onLogTrip({ mode: r.mode, km: r.distanceKm, ambientUgm3: r.ambientUgm3 })} aria-label={t.logTripFor(names[r.mode], r.alt)} className="min-h-11 rounded-md border border-brand px-3 py-1 font-medium text-brand-text hover:bg-brand-soft">{t.logTrip}</button>
+                  <button type="button" onClick={() => onLogTrip({ mode: r.mode, km: r.distanceKm, ambientUgm3: r.ambientUgm3 })} aria-label={t.logTripFor(names[r.mode], r.alt)} className="min-h-11 rounded-control border border-brand px-3 py-1 font-medium text-brand-text hover:bg-brand-soft">{t.logTrip}</button>
                 </td>
               )}
             </tr>

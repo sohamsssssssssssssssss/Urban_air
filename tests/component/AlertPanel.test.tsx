@@ -3,7 +3,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
-import AlertPanel from "@/features/alerts/AlertPanel";
+import AlertsHost, { ALERT_PANEL_SLOT_ID } from "@/features/alerts/AlertsHost";
 import { ALERT_POLL_MS, ALERT_RENOTIFY_MS } from "@/features/alerts/constants";
 import { categoryFor } from "@/lib/aq/naqi";
 import { snapshot } from "../fixtures/data";
@@ -39,7 +39,7 @@ afterEach(() => {
 });
 
 const renderPanel = (language: "en" | "hi" = "en") =>
-  render(<><div id="alert-slot" /><AlertPanel location={location} language={language} /></>);
+  render(<><div id="alert-slot" /><div id={ALERT_PANEL_SLOT_ID} /><AlertsHost location={location} language={language} meOpened /></>);
 const toggle = (lang: "en" | "hi" = "en") => screen.getByRole("button", { name: lang === "en" ? "In-app alerts" : "ऐप के अंदर अलर्ट" });
 const tick = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
 const turnOn = async () => {
@@ -47,7 +47,7 @@ const turnOn = async () => {
   await act(() => vi.advanceTimersByTimeAsync(0));
 };
 
-describe("AlertPanel", () => {
+describe("AlertsHost + AlertPanel", () => {
   it("states the honest limit, checks nothing and asks for no permission until the user acts, with no axe violations", async () => {
     const { container } = renderPanel();
     expect(screen.getByRole("heading", { level: 2, name: "Air alerts" })).toBeTruthy();

@@ -6,7 +6,7 @@ import type { PlaceChoice } from "./schema";
 import { COMPARE_STRINGS } from "./strings";
 
 const OTHER = "__other";
-const field = "mt-1 block min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 py-2";
+const field = "mt-1 block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3 py-2";
 
 export interface ComparePlaceFieldProps {
   n: 1 | 2;

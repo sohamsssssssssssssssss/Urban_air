@@ -10,7 +10,7 @@ afterEach(cleanup);
 describe("AqiCard", () => {
   it("shows AQI, category as text, station, time and pollutants, with no axe violations", async () => {
     const { container } = render(<AqiCard state={{ status: "ready", snapshot }} />);
-    expect(container.querySelector(".text-5xl")?.textContent).toBe("AQI 374");
+    expect(container.querySelector("[data-aqi-value]")?.textContent).toBe("AQI 374");
     expect(screen.getByText("Very Poor")).toBeTruthy();
     expect(screen.getByText("AQI (24h, official method)")).toBeTruthy();
     expect(screen.getByText("Now (last hour) PM2.5")).toBeTruthy();

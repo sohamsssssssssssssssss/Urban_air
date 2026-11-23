@@ -32,7 +32,7 @@ export default function Checklist({ snapshot, profile, language }: ChecklistProp
         <legend className="sr-only">{t.groupLabel}</legend>
         <ul className="grid gap-3">
           {items.map((item) => (
-            <li key={item.id} className="rounded-lg border border-line p-3">
+            <li key={item.id} className="rounded-control border border-line p-3">
               <label className="flex min-h-11 items-start gap-3">
                 <input
                   type="checkbox" className="mt-1 h-5 w-5 accent-brand" checked={ticked.includes(item.id)}
@@ -51,7 +51,7 @@ export default function Checklist({ snapshot, profile, language }: ChecklistProp
         </ul>
       </fieldset>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <button type="button" onClick={() => setState({ day: istDayKey(), checked: [] })} className="min-h-11 rounded-md border border-brand px-4 py-2 font-medium text-brand-text hover:bg-brand-soft">
+        <button type="button" onClick={() => setState({ day: istDayKey(), checked: [] })} className="min-h-11 rounded-control border border-brand px-4 py-2 font-medium text-brand-text hover:bg-brand-soft">
           {t.uncheckAll}
         </button>
         <p className="text-xs text-ink-muted">{t.storage}</p>

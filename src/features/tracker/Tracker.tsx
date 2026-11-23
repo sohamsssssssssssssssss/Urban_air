@@ -13,7 +13,7 @@ import TrackerSummary from "./TrackerSummary";
 import { TRACKER_STRINGS } from "./strings";
 import Section from "@/components/ui/Section";
 
-const field = "mt-1 block min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 py-2";
+const field = "mt-1 block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3 py-2";
 const newId = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 export interface TrackerProps {
@@ -85,7 +85,7 @@ export default function Tracker({ language, defaultBaseline, ambientUgm3, draft 
           <label htmlFor={`${id}-km`} className="block font-medium">{t.km}</label>
           <input id={`${id}-km`} type="number" inputMode="decimal" min={0.1} max={100} step="0.1" className={field} value={km} required onChange={(e) => setKm(e.target.value)} />
         </div>
-        <button type="submit" className="min-h-11 rounded-md bg-brand px-5 py-2 font-semibold text-brand-ink hover:bg-brand-hover">{t.submit}</button>
+        <button type="submit" className="min-h-11 rounded-control bg-brand px-5 py-2 font-semibold text-brand-ink hover:bg-brand-hover">{t.submit}</button>
       </form>
       <p aria-live="polite" className="mt-2 min-h-6 text-sm font-medium">{message}</p>
 

@@ -11,7 +11,7 @@ import type { TripDraft } from "@/features/tracker/schema";
 import RouteResults from "./RouteResults";
 import Section from "@/components/ui/Section";
 
-const field = "mt-1 block min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 py-2";
+const field = "mt-1 block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3 py-2";
 
 /** Origin/destination form that asks /api/route for routes ranked by estimated PM2.5 inhaled. */
 export default function RoutePlanner({ language, onLogTrip }: { language: Language; onLogTrip?: (draft: TripDraft) => void }) {
@@ -56,13 +56,13 @@ export default function RoutePlanner({ language, onLogTrip }: { language: Langua
           <p id={`${id}-time-hint`} className="mt-1 text-sm text-ink-muted">{t.leaveHint}</p>
         </div>
         <div className="md:col-span-3">
-          <button type="submit" disabled={busy} className="min-h-11 rounded-md bg-brand px-6 py-2 font-semibold text-brand-ink hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink-muted disabled:border-line">
+          <button type="submit" disabled={busy} className="min-h-11 rounded-control bg-brand px-6 py-2 font-semibold text-brand-ink hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink-muted disabled:border-line">
             {busy ? t.submitting : t.submit}
           </button>
         </div>
       </form>
       <div aria-live="polite" aria-busy={busy}>
-        {error && <p role="alert" className="mt-3 rounded-lg border border-danger bg-danger-soft p-3 text-danger-text">{error}</p>}
+        {error && <p role="alert" className="mt-3 rounded-control border border-danger bg-danger-soft p-3 text-danger-text">{error}</p>}
         {result && <RouteResults result={result} language={language} onLogTrip={onLogTrip} />}
       </div>
     </Section>

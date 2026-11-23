@@ -37,9 +37,9 @@ export default function Outlook({ location, language }: { location: Location; la
       <p className="mt-2 text-ink">{t.intro}</p>
       {!data && !error && <p className="mt-3 text-ink-muted">{t.loading}</p>}
       {error && (
-        <div role="alert" className="mt-3 rounded-lg border border-danger bg-danger-soft p-3 text-danger-text">
+        <div role="alert" className="mt-3 rounded-control border border-danger bg-danger-soft p-3 text-danger-text">
           <p>{error}</p>
-          <button type="button" onClick={retry} className="mt-2 min-h-11 rounded-md border border-danger px-4 py-2 font-medium hover:bg-danger-soft">{t.retry}</button>
+          <button type="button" onClick={retry} className="mt-2 min-h-11 rounded-control border border-danger px-4 py-2 font-medium hover:bg-danger-soft">{t.retry}</button>
         </div>
       )}
       {data && (

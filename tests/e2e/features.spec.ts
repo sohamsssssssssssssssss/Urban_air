@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { axeScan, stubApis } from "./stubs";
+import { axeScan, onboard, openSection, stubApis } from "./stubs";
 
 // One smoke test, one step per v2 feature, so a regression names the feature that broke.
 test("v2 feature smoke", async ({ page }) => {
@@ -18,9 +18,8 @@ test("v2 feature smoke", async ({ page }) => {
   });
   await page.goto("/");
 
-  await test.step("setup: submit the household form", async () => {
-    await page.getByLabel("Children").check();
-    await page.getByRole("button", { name: "Get my plan" }).click();
+  await test.step("setup: the short onboarding", async () => {
+    await onboard(page, { kids: true });
     await expect(page.getByRole("region", { name: "Air quality now" })).toContainText("AQI 374");
   });
 
@@ -30,13 +29,11 @@ test("v2 feature smoke", async ({ page }) => {
     await expect(today).toContainText("close-fitted N95");
   });
 
-  await test.step("checklist: tick an item, it is remembered after a reload", async () => {
+  await test.step("checklist: tick an item, it and the household are remembered after a reload", async () => {
     const list = page.getByRole("region", { name: "Household checklist for today" });
     await list.getByRole("checkbox").first().check();
     await expect(list).toContainText("1 of 4 done");
-    await page.reload();
-    await page.getByLabel("Children").check(); // the form itself is not persisted, only the checklist ticks
-    await page.getByRole("button", { name: "Get my plan" }).click();
+    await page.reload(); // returning visitor: the saved household skips onboarding
     await expect(page.getByRole("region", { name: "Household checklist for today" })).toContainText("1 of 4 done");
   });
 
@@ -48,6 +45,7 @@ test("v2 feature smoke", async ({ page }) => {
   });
 
   await test.step("48h outlook: labelled as a forecast, three windows, chart with a text alternative", async () => {
+    await openSection(page, "Outlook");
     const outlook = page.getByRole("region", { name: "Next 48 hours" });
     await expect(outlook).toContainText("Model forecast (CAMS), not a measurement");
     await expect(outlook.getByRole("listitem")).toHaveCount(3);
@@ -62,6 +60,7 @@ test("v2 feature smoke", async ({ page }) => {
   });
 
   await test.step("commute tracker: log a trip manually, and from a planned route", async () => {
+    await openSection(page, "Me");
     const tracker = page.getByRole("region", { name: "Commute impact tracker" });
     await tracker.getByLabel("Mode", { exact: true }).selectOption("metro");
     await tracker.getByLabel("Distance (km)").fill("10");
@@ -69,11 +68,13 @@ test("v2 feature smoke", async ({ page }) => {
     await expect(tracker.getByText("Trip logged.")).toBeVisible();
     await expect(tracker.getByRole("heading", { name: "This week" }).locator("..")).toContainText("1 trip · 10 km");
 
+    await openSection(page, "Routes");
     const planner = page.getByRole("region", { name: "Cleaner routes" });
     await planner.getByLabel("From").fill("Colaba Causeway, Mumbai");
-    await planner.getByLabel("To").fill("Bandra Kurla Complex, Mumbai");
+    await planner.getByLabel("To", { exact: true }).fill("Bandra Kurla Complex, Mumbai");
     await planner.getByRole("button", { name: "Find routes" }).click();
     await planner.getByRole("button", { name: "Log this trip: cycling, route 1" }).click();
+    await expect(page).toHaveURL(/#me$/); // logging hands the trip to the tracker in Me
     await expect(tracker).toContainText("Prefilled from the route you chose");
     await expect(tracker.getByLabel("Distance (km)")).toHaveValue("19.1");
   });
@@ -88,11 +89,13 @@ test("v2 feature smoke", async ({ page }) => {
   });
 
   await test.step("kid-friendly mode: simpler wording on request, saved on this device", async () => {
+    await openSection(page, "Plan");
     await page.getByRole("checkbox", { name: "Kid-friendly wording" }).check();
-    await expect(page.getByRole("tabpanel")).toContainText("Go out to play between");
-    await expect(page.getByRole("tabpanel")).not.toContainText("Schedule outdoor errands");
+    const panel = page.getByRole("tabpanel").filter({ visible: true });
+    await expect(panel).toContainText("Go out to play between");
+    await expect(panel).not.toContainText("Schedule outdoor errands");
     await page.getByRole("tab", { name: /Indoor air/ }).click();
-    await expect(page.getByRole("tabpanel")).toContainText("tiny dust");
+    await expect(panel).toContainText("tiny dust");
     expect(await page.evaluate(() => window.localStorage.getItem("smogsense:v1:kids"))).toBe("true");
     await page.getByRole("checkbox", { name: "Kid-friendly wording" }).uncheck();
     await expect(page.getByRole("tab", { name: /Daily routines/ })).toBeVisible();
@@ -100,7 +103,7 @@ test("v2 feature smoke", async ({ page }) => {
 
   await test.step("tip feedback: one anonymous vote, nothing but the tip id and the vote is sent", async () => {
     await page.getByRole("tab", { name: /Daily routines/ }).click();
-    const helpful = page.getByRole("tabpanel").getByRole("button", { name: "Helpful" }).first();
+    const helpful = page.getByRole("tabpanel").filter({ visible: true }).getByRole("button", { name: "Helpful" }).first();
     await helpful.click();
     await expect(helpful).toHaveAttribute("aria-pressed", "true");
     await expect.poll(() => feedback.length).toBe(1);
@@ -117,8 +120,11 @@ test("v2 feature smoke", async ({ page }) => {
     await expect(share).toContainText("Never on the card: your name, exact location");
   });
 
-  await test.step("accessibility: no axe violations with all sections open", async () => {
-    expect((await axeScan(page)).violations).toEqual([]);
+  await test.step("accessibility: no axe violations on every section", async () => {
+    for (const name of ["Today", "Plan", "Routes", "Outlook", "Me"] as const) {
+      await openSection(page, name);
+      expect((await axeScan(page)).violations, name).toEqual([]);
+    }
   });
 });
 

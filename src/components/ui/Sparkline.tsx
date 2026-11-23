@@ -1,6 +1,6 @@
 import { useId } from "react";
 import { cn } from "./cn";
-import { sparklinePoints } from "./sparkline";
+import { sparklinePoints } from "./sparkMath";
 
 export interface SparklineProps {
   values: number[];

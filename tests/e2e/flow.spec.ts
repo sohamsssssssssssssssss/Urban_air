@@ -4,6 +4,7 @@ import { ruleBasedAdvice } from "../../src/lib/ai/fallback";
 import { buildFacts } from "../../src/lib/impact/facts";
 import { profile, snapshot } from "../fixtures/data";
 import { routeResult } from "../fixtures/route";
+import { onboard, openSection } from "./stubs";
 
 // Browser-level E2E: the server routes are covered by integration tests, so here we stub the
 // network to make the UI flow deterministic without API keys.
@@ -23,7 +24,7 @@ async function stubApi(page: Page, airStatus = 200) {
 
 const axeScan = (page: Page) => new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
 
-test("onboarding -> AQI card -> three tabs -> chat reply, accessible throughout", async ({ page }) => {
+test("onboarding -> AQI hero -> plan tabs -> chat dialog, accessible throughout", async ({ page }) => {
   await stubApi(page);
   const aiCalls: string[] = [];
   page.on("request", (request) => {
@@ -31,39 +32,45 @@ test("onboarding -> AQI card -> three tabs -> chat reply, accessible throughout"
     if (path === "/api/advice" || path === "/api/chat") aiCalls.push(path);
   });
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1, name: "SmogSense" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
   expect((await axeScan(page)).violations).toEqual([]);
   expect(aiCalls).toEqual([]);
 
-  await page.getByRole("group", { name: "Location" }).getByLabel("City").selectOption("Delhi");
-  await page.getByLabel("Children").check();
-  await page.getByLabel("Usual mode", { exact: true }).selectOption("car");
-  await page.getByRole("button", { name: "Get my plan" }).click();
-
+  await onboard(page, { kids: true });
   const card = page.getByRole("region", { name: "Air quality now" });
   await expect(card).toContainText("AQI 374");
   await expect(card.getByText("Very Poor", { exact: true })).toBeVisible();
+  expect(aiCalls).toEqual([]); // the plan (Gemini) is only requested when the Plan section opens
 
+  await openSection(page, "Plan");
+  await expect(page).toHaveURL(/#plan$/);
   for (const name of [/Daily routines/, /Indoor air/, /Greener choices/]) {
     await page.getByRole("tab", { name }).click();
-    await expect(page.getByRole("tabpanel")).toContainText("Impact");
+    await expect(page.getByRole("tabpanel").filter({ visible: true })).toContainText("Impact");
   }
   await page.getByRole("tab", { name: /Greener choices/ }).press("Home");
   await expect(page.getByRole("tab", { name: /Daily routines/ })).toBeFocused();
+  await page.goBack();
+  await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
 
-  await page.getByLabel("Your question").fill("Can my child play outside?");
   await page.getByRole("button", { name: "Ask" }).click();
-  await expect(page.getByRole("log")).toContainText("Keep the kids indoors until 13:00.");
-
+  const dialog = page.getByRole("dialog", { name: "Ask SmogSense" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel("Your question").fill("Can my child play outside?");
+  await dialog.getByRole("button", { name: "Ask" }).click();
+  await expect(dialog.getByRole("log")).toContainText("Keep the kids indoors until 13:00.");
   expect((await axeScan(page)).violations).toEqual([]);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole("button", { name: "Ask" })).toBeFocused();
 });
 
 test("shows an explicit unavailable state and no advice when live data is missing", async ({ page }) => {
   await stubApi(page, 503);
   await page.goto("/");
-  await page.getByRole("button", { name: "Get my plan" }).click();
+  await onboard(page);
   await expect(page.getByRole("region", { name: "Air quality now" }).getByRole("alert")).toContainText("Live data unavailable");
-  await expect(page.getByRole("heading", { name: "Your plan" })).toHaveCount(0);
+  await expect(page.getByRole("tab")).toHaveCount(0);
 });
 
 test("skip link and security headers", async ({ page }) => {
@@ -74,18 +81,18 @@ test("skip link and security headers", async ({ page }) => {
   expect(headers["x-content-type-options"]).toBe("nosniff");
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Skip to main content" })).toBeFocused();
-  await page.getByRole("radio", { name: "हिन्दी" }).check();
+  await page.getByRole("button", { name: "हिन्दी" }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "hi");
-  await expect(page.getByRole("banner")).toContainText("ताज़ा वायु गुणवत्ता");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("आज");
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "data.gov.in पर CPCB" })).toBeVisible();
 });
 
 test("route planner: places in, ranked routes out, accessible", async ({ page }) => {
   await stubApi(page);
   await page.route("**/api/route", (r) => r.fulfill({ json: routeResult }));
-  await page.goto("/");
+  await page.goto("/#routes"); // deep link straight to a section
   await page.getByLabel("From").fill("Colaba Causeway, Mumbai");
-  await page.getByLabel("To").fill("Bandra Kurla Complex, Mumbai");
+  await page.getByLabel("To", { exact: true }).fill("Bandra Kurla Complex, Mumbai");
   await page.getByRole("button", { name: "Find routes" }).click();
   const section = page.getByRole("region", { name: "Cleaner routes" });
   await expect(section.getByText("Cleanest air")).toBeVisible();

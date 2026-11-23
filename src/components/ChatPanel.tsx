@@ -6,7 +6,6 @@ import { UI, errorMessage, type Language } from "@/lib/i18n";
 import type { Location, UserProfile } from "@/lib/profile";
 import type { ChatTurn } from "@/lib/requests";
 import { ApiError, streamChatAnswer } from "./apiClient";
-import Section from "@/components/ui/Section";
 
 export interface ChatPanelProps {
   location: Location;
@@ -46,11 +45,11 @@ export default function ChatPanel({ location, profile, language }: ChatPanelProp
   }
 
   return (
-    <Section title={t.heading}>
+    <div>
       <div role="log" aria-live="polite" aria-label={t.log}>
         <ol className="mt-3 grid gap-3">
         {turns.map((turn, i) => (
-          <li key={i} className={turn.role === "user" ? "justify-self-end rounded-lg bg-brand-soft p-3" : "rounded-lg bg-sunken p-3"}>
+          <li key={i} className={turn.role === "user" ? "justify-self-end rounded-control bg-brand-soft p-3" : "rounded-control bg-sunken p-3"}>
             <span className="sr-only">{turn.role === "user" ? t.you : t.bot}</span>
             <p className="whitespace-pre-wrap">{turn.text || (busy && i === turns.length - 1 ? t.thinking : "")}</p>
           </li>
@@ -63,16 +62,16 @@ export default function ChatPanel({ location, profile, language }: ChatPanelProp
           id={`${id}-msg`} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={CHAT_MAX_CHARS} rows={3}
           aria-describedby={`${id}-count${error ? ` ${id}-err` : ""}`} aria-invalid={error ? true : undefined}
           placeholder={t.placeholder}
-          className="mt-1 block w-full rounded-md border border-line-strong p-3"
+          className="mt-1 block w-full rounded-control border border-line-strong p-3"
         />
         <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
           <p id={`${id}-count`} className="text-sm text-ink-muted">{t.count(draft.length, CHAT_MAX_CHARS)}</p>
-          <button type="submit" disabled={busy || !draft.trim()} className="min-h-11 rounded-md bg-brand px-5 py-2 font-semibold text-brand-ink hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink-muted disabled:border-line">
+          <button type="submit" disabled={busy || !draft.trim()} className="min-h-11 rounded-control bg-brand px-5 py-2 font-semibold text-brand-ink hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink-muted disabled:border-line">
             {busy ? t.answering : t.ask}
           </button>
         </div>
         {error && <p id={`${id}-err`} role="alert" className="mt-2 text-sm font-medium text-danger-text">{error}</p>}
       </form>
-    </Section>
+    </div>
   );
 }

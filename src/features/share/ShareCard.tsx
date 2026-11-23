@@ -12,8 +12,8 @@ import { SHARE_STRINGS } from "./strings";
 import Section from "@/components/ui/Section";
 
 type Kind = "today" | "weekly";
-const field = "mt-1 block min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 py-2";
-const btn = "min-h-11 rounded-md border px-5 py-2 font-semibold";
+const field = "mt-1 block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3 py-2";
+const btn = "min-h-11 rounded-control border px-5 py-2 font-semibold";
 const EMPTY = { baseline: "car" as const, trips: [] };
 
 /** Builds a share image (today's air for a city, or the user's own impact) with Web Share and a download fallback. */
@@ -91,7 +91,7 @@ export default function ShareCard({ city: initialCity, language }: { city: CityN
             <p role="alert" className="rounded border border-danger bg-danger-soft p-3 text-danger-text">{t.imageFailed}</p>
           ) : (
             // eslint-disable-next-line @next/next/no-img-element -- a generated PNG from our own API; next/image would only re-encode it
-            <img src={url} alt={alt} width={CARD_WIDTH} height={CARD_HEIGHT} loading="lazy" onError={() => setImageError(true)} className="h-auto w-full rounded-lg border border-line" />
+            <img src={url} alt={alt} width={CARD_WIDTH} height={CARD_HEIGHT} loading="lazy" onError={() => setImageError(true)} className="h-auto w-full rounded-control border border-line" />
           )}
         </figure>
       )}

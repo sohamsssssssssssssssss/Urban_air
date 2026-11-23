@@ -7,7 +7,7 @@ import type { Vote } from "./constants";
 import { FEEDBACK_STRINGS } from "./strings";
 import { readVotes, saveVote } from "./votes";
 
-const btn = "min-h-11 rounded-md border px-4 py-2 text-sm font-medium";
+const btn = "min-h-11 rounded-control border px-4 py-2 text-sm font-medium";
 
 /** Helpful / Not useful for one tip. The vote is kept on this device; only {tipId, vote} is sent, once per change. */
 export default function TipFeedback({ tipId, language }: { tipId: string; language: Language }) {

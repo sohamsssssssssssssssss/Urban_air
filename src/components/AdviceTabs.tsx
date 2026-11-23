@@ -1,18 +1,18 @@
 "use client";
 
-import { useId, useRef, useState, type KeyboardEvent } from "react";
 import type { AiFailureReason } from "@/lib/ai/failure";
 import type { Advice, AdviceItem, Section as SectionKey } from "@/lib/ai/schema";
 import TipFeedback from "@/features/feedback/TipFeedback";
 import { UI, type Language } from "@/lib/i18n";
-import Section from "@/components/ui/Section";
+import { impactPercent } from "./impact";
+import Bar from "./ui/Bar";
+import Card from "./ui/Card";
+import Pill, { type PillTone } from "./ui/Pill";
+import Section from "./ui/Section";
+import Tabs from "./ui/Tabs";
 
 const TABS: SectionKey[] = ["routines", "indoor", "alternatives"];
-const PRIORITY_STYLE: Record<AdviceItem["priority"], string> = {
-  high: "border-danger text-danger-text",
-  medium: "border-warn text-warn-text",
-  low: "border-line-strong text-ink",
-};
+const PRIORITY_TONE: Record<AdviceItem["priority"], PillTone> = { high: "danger", medium: "warn", low: "neutral" };
 
 export interface AdviceTabsProps {
   advice: Advice;
@@ -22,77 +22,59 @@ export interface AdviceTabsProps {
   language: Language;
 }
 
-/** Personalised plan in three WAI-ARIA tabs (arrow keys, Home, End). Model text is rendered as plain text only. */
+/** The personalised plan as three tabs of cards. Model text is rendered as plain text only. */
 export default function AdviceTabs({ advice, generatedBy, fallbackReason = "other", language }: AdviceTabsProps) {
-  const id = useId();
   const t = UI[language].plan;
-  const [active, setActive] = useState(0);
-  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
-
-  function onKeyDown(e: KeyboardEvent) {
-    const last = TABS.length - 1;
-    const next = { ArrowRight: active === last ? 0 : active + 1, ArrowLeft: active === 0 ? last : active - 1, Home: 0, End: last }[e.key];
-    if (next === undefined) return;
-    e.preventDefault();
-    setActive(next);
-    tabRefs.current[next]?.focus();
-  }
-
   return (
     <Section title={t.heading}>
-      <p className="mt-1 text-sm text-ink-muted">
-        {generatedBy === "gemini" ? t.byGemini : t.byRules(t.aiReasons[fallbackReason])}
-      </p>
+      <p className="mt-1 text-sm text-ink-muted">{generatedBy === "gemini" ? t.byGemini : t.byRules(t.aiReasons[fallbackReason])}</p>
       <div>
-        <p className="mt-3">{advice.summary}</p>
-        <p className="mt-2 font-medium">
+        <p className="mt-3 text-lg">{advice.summary}</p>
+        <p className="mt-2 font-semibold">
           <span className="text-ink-muted">{t.bestTime}</span>
           {advice.bestOutdoorWindow}
         </p>
       </div>
-
-      <div role="tablist" aria-label={t.tabsLabel} className="mt-4 flex flex-wrap gap-2 border-b border-line" onKeyDown={onKeyDown}>
-        {TABS.map((key, i) => (
-          <button
-            key={key} ref={(el) => { tabRefs.current[i] = el; }} id={`${id}-tab-${key}`} role="tab" type="button"
-            aria-selected={active === i} aria-controls={`${id}-panel-${key}`} tabIndex={active === i ? 0 : -1} onClick={() => setActive(i)}
-            className={`-mb-px min-h-11 rounded-t-md border-b-4 px-4 py-2 font-medium ${active === i ? "border-brand text-brand-text" : "border-transparent text-ink-muted hover:text-ink"}`}
-          >
-            {t.tabs[key]} <span className="text-ink-muted">({advice[key].length})</span>
-          </button>
-        ))}
-      </div>
-
-      {TABS.map((key, i) => (
-        <div key={key} id={`${id}-panel-${key}`} role="tabpanel" aria-labelledby={`${id}-tab-${key}`} hidden={active !== i} tabIndex={0} className="pt-4">
-          {advice[key].length === 0 ? <p>{t.empty}</p> : (
-            <ul className="grid gap-4">
-              {advice[key].map((item, n) => <Item key={n} item={item} language={language} />)}
-            </ul>
-          )}
-        </div>
-      ))}
+      <Tabs
+        label={t.tabsLabel} className="mt-5"
+        tabs={TABS.map((key) => ({
+          id: key,
+          label: <>{t.tabs[key]} <span className="font-semibold text-ink-muted">({advice[key].length})</span></>,
+          panel: advice[key].length === 0 ? <p>{t.empty}</p> : <ul className="grid gap-3">{advice[key].map((item, n) => <Tip key={n} item={item} language={language} />)}</ul>,
+        }))}
+      />
     </Section>
   );
 }
 
-function Item({ item, language }: { item: AdviceItem; language: Language }) {
-  const t = UI[language].plan;
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <li className="rounded-lg border border-line p-4">
+    <div className="grid gap-0.5 sm:grid-cols-[5.5rem_1fr] sm:gap-3">
+      <dt className="text-xs font-bold uppercase tracking-wide text-ink-muted sm:pt-0.5">{label}</dt>
+      <dd>{children}</dd>
+    </div>
+  );
+}
+
+/** One tip: the action, a priority pill, then Why / Impact / For you as compact rows. The impact bar is decorative. */
+function Tip({ item, language }: { item: AdviceItem; language: Language }) {
+  const t = UI[language].plan;
+  const percent = impactPercent(item.impact);
+  return (
+    <Card as="li" className="p-4 shadow-none">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <h3 className="font-semibold">{item.action}</h3>
-        <span className={`rounded border px-2 py-0.5 text-xs font-semibold ${PRIORITY_STYLE[item.priority]}`}>{t.priority[item.priority]}</span>
+        <h3 className="min-w-0 flex-1 text-base font-bold">{item.action}</h3>
+        <Pill tone={PRIORITY_TONE[item.priority]}>{t.priority[item.priority]}</Pill>
       </div>
-      <dl className="mt-2 grid gap-1 text-sm sm:grid-cols-[7rem_1fr]">
-        <dt className="font-semibold text-ink-muted">{t.why}</dt>
-        <dd>{item.why}</dd>
-        <dt className="font-semibold text-ink-muted">{t.impact}</dt>
-        <dd>{item.impact}</dd>
-        <dt className="font-semibold text-ink-muted">{t.forYou}</dt>
-        <dd>{item.personalizedFor}</dd>
+      <dl className="mt-3 grid gap-2 text-sm">
+        <Row label={t.why}>{item.why}</Row>
+        <Row label={t.impact}>
+          {item.impact}
+          {percent !== undefined && <Bar percent={percent} className="mt-1.5 max-w-xs" />}
+        </Row>
+        <Row label={t.forYou}>{item.personalizedFor}</Row>
       </dl>
       {item.id && <TipFeedback tipId={item.id} language={language} />}
-    </li>
+    </Card>
   );
 }

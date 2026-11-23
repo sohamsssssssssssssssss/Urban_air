@@ -57,3 +57,13 @@ export function readFlag(name: string): boolean {
 export function writeFlag(name: string, value: boolean): boolean {
   return writeStored(name, value);
 }
+
+/** Reads a stored JSON value without validating it (callers must validate; keeps Zod out of first-load code). Undefined if missing or blocked. */
+export function readValue(name: string): unknown {
+  try {
+    const raw = window.localStorage.getItem(PREFIX + name);
+    return raw === null ? undefined : JSON.parse(raw);
+  } catch {
+    return undefined;
+  }
+}

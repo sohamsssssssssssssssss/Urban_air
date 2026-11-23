@@ -9,7 +9,7 @@ import type { CompareSide } from "./server";
 export default function CompareCard({ side, language }: { side: CompareSide; language: Language }) {
   const t = COMPARE_STRINGS[language];
   return (
-    <li className="rounded-lg border border-line p-4">
+    <li className="rounded-control border border-line p-4">
       <h3 className="text-lg font-semibold">{side.label}</h3>
       {side.status === "unavailable" ? (
         <p role="alert" className="mt-2 rounded border border-line-strong bg-sunken p-2 text-sm">{t.sideError[side.code]}</p>

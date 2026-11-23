@@ -37,3 +37,15 @@ export async function stubApis(page: Page): Promise<{ feedback: unknown[] }> {
 }
 
 export const axeScan = (page: Page) => new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+
+/** First visit: the short onboarding (city + household), then land on the live air. */
+export async function onboard(page: Page, opts: { kids?: boolean } = {}) {
+  await page.getByLabel("Your city").selectOption("Delhi");
+  if (opts.kids) await page.getByLabel("Children").check();
+  await page.getByRole("button", { name: "Show my air" }).click();
+}
+
+/** Goes to a section through the navigation (like a user would) and waits for its heading. */
+export async function openSection(page: Page, name: "Today" | "Plan" | "Routes" | "Outlook" | "Me") {
+  await page.getByRole("link", { name, exact: true }).click();
+}

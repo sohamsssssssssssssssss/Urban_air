@@ -45,14 +45,14 @@ export default function Compare({ location, language }: { location: Location; la
         <ComparePlaceField n={1} choice={choices.a} onChange={(a) => setChoices((c) => ({ ...c, a }))} language={language} />
         <ComparePlaceField n={2} choice={choices.b} onChange={(b) => setChoices((c) => ({ ...c, b }))} language={language} />
         <div className="md:col-span-2">
-          <button type="submit" disabled={busy || !ready(choices.a) || !ready(choices.b)} className="min-h-11 rounded-md bg-brand px-6 py-2 font-semibold text-brand-ink hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink-muted disabled:border-line">
+          <button type="submit" disabled={busy || !ready(choices.a) || !ready(choices.b)} className="min-h-11 rounded-control bg-brand px-6 py-2 font-semibold text-brand-ink hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink-muted disabled:border-line">
             {busy ? t.submitting : t.submit}
           </button>
           <p className="mt-2 text-xs text-ink-muted">{t.storage}</p>
         </div>
       </form>
       <div aria-live="polite" aria-busy={busy}>
-        {error && <p role="alert" className="mt-3 rounded-lg border border-danger bg-danger-soft p-3 text-danger-text">{error}</p>}
+        {error && <p role="alert" className="mt-3 rounded-control border border-danger bg-danger-soft p-3 text-danger-text">{error}</p>}
         {result && (
           <>
             {summary && <p className="mt-4 text-lg font-semibold">{summary}</p>}

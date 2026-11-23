@@ -16,7 +16,7 @@ export interface TodayLineProps {
 export default function TodayLine({ snapshot, profile, language, aiLine }: TodayLineProps) {
   const t = TODAY_STRINGS[language];
   return (
-    <section aria-labelledby="today-heading" className="rounded-xl border-2 border-brand bg-brand-soft p-5">
+    <section aria-labelledby="today-heading" className="rounded-card border-2 border-brand bg-brand-soft p-5">
       <h2 id="today-heading" className="text-sm font-semibold uppercase tracking-wide text-brand-text">{t.heading}</h2>
       <p aria-live="polite" className="mt-1 text-xl font-semibold text-ink">{aiLine ?? todaySentence(todayFacts(snapshot, profile), language)}</p>
       <p className="mt-1 text-xs text-ink-muted">{aiLine ? t.reworded : t.computed}</p>
