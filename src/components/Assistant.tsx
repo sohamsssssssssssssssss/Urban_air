@@ -6,6 +6,7 @@ import type { AiFailureReason } from "@/lib/ai/failure";
 import type { Advice } from "@/lib/ai/schema";
 import { UI, errorMessage, type Language } from "@/lib/i18n";
 import type { Location, UserProfile } from "@/lib/profile";
+import TodayLine from "@/features/today/TodayLine";
 import AdviceTabs from "./AdviceTabs";
 import AqiCard, { type AirState } from "./AqiCard";
 import ProfileForm from "./ProfileForm";
@@ -16,7 +17,7 @@ import { ApiError, fetchAdvice, fetchAir } from "./apiClient";
 const RoutePlanner = dynamic(() => import("./RoutePlanner"), { loading: () => <p>…</p> });
 const ChatPanel = dynamic(() => import("./ChatPanel"), { loading: () => <p>…</p> });
 
-type Plan = { advice: Advice; generatedBy: "gemini" | "rules"; fallbackReason?: AiFailureReason; language: Language };
+type Plan = { advice: Advice; generatedBy: "gemini" | "rules"; todayLine?: string; fallbackReason?: AiFailureReason; language: Language };
 type Request = { location: Location; profile: UserProfile; language: Language };
 
 /** Client island orchestrating onboarding -> live AQI -> plan -> chat. */
@@ -47,8 +48,8 @@ export default function Assistant() {
       .then((snapshot) => setAir({ status: "ready", snapshot }))
       .catch((err: unknown) => setAir({ status: "unavailable", message: messageFor(err, lang) }));
     const adviceCall = fetchAdvice(location, profile, lang)
-      .then(({ advice, generatedBy, fallbackReason, snapshot }) => {
-        setPlan({ advice, generatedBy, fallbackReason, language: lang });
+      .then(({ advice, generatedBy, todayLine, fallbackReason, snapshot }) => {
+        setPlan({ advice, generatedBy, todayLine, fallbackReason, language: lang });
         setAir({ status: "ready", snapshot });
       })
       .catch((err: unknown) => {
@@ -71,6 +72,9 @@ export default function Assistant() {
         </div>
       </header>
       <main id="main" tabIndex={-1} className="mx-auto grid max-w-5xl gap-6 px-4 py-8 focus:outline-none">
+        {air.status === "ready" && request && (
+          <TodayLine snapshot={air.snapshot} profile={request.profile} language={language} aiLine={plan?.language === language ? plan.todayLine : undefined} />
+        )}
         <ProfileForm onSubmit={run} busy={busy} language={language} onLanguageChange={setLanguage} />
         <AqiCard state={air} language={language} />
         {busy && !plan && air.status !== "unavailable" && (

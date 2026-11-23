@@ -39,6 +39,8 @@ export const ModelAdviceSchema = z.object({
   routines: z.array(ModelItemSchema).max(8),
   indoor: z.array(ModelItemSchema).max(8),
   alternatives: z.array(ModelItemSchema).max(8),
+  /** Optional reworded "Today in one line" sentence (accepted only after `acceptRephrase` checks). */
+  todayLine: z.string().max(240).optional(),
 });
 export type ModelAdvice = z.infer<typeof ModelAdviceSchema>;
 

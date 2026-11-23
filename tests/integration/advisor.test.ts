@@ -97,4 +97,46 @@ describe("getAdvice", () => {
     await getAdvice(snapshot, { ...profile, pets: true }, "en", true);
     expect(generateContent).toHaveBeenCalledTimes(3);
   });
+
+  describe("Today in one line (Gemini rewording)", () => {
+    const target = { line: "Today the best time outside is 14:00–17:00. Keep windows shut. Wear a close-fitted N95 when you go out.", mustMention: [["14:00"], ["17:00"], ["shut", "closed"], ["mask", "N95"]] };
+    const withLine = (todayLine: string) => ({ text: JSON.stringify({ ...realEn, todayLine }) });
+    const advise2 = async (rephrase?: typeof target) => {
+      vi.resetModules();
+      const { getAdvice } = await import("@/lib/ai/advisor");
+      return getAdvice(snapshot, profile, "en", true, rephrase);
+    };
+
+    it("returns Gemini's wording when it keeps the times and decisions, in the same single call", async () => {
+      const good = "Go out between 14:00–17:00, keep windows shut, and wear an N95 mask.";
+      generateContent.mockResolvedValueOnce(withLine(good));
+      const r = await advise2(target);
+      expect(r).toMatchObject({ generatedBy: "gemini", todayLine: good });
+      expect(generateContent).toHaveBeenCalledTimes(1);
+      const call = generateContent.mock.calls[0]![0];
+      expect(call.config.systemInstruction).toContain('"todayLine"');
+      expect(call.contents).toContain(target.line); // the computed sentence is in the grounded context
+    });
+    it("drops a rewording that omits the mask but still returns the advice", async () => {
+      generateContent.mockResolvedValueOnce(withLine("Go out between 14:00–17:00 and keep windows shut."));
+      const r = await advise2(target);
+      expect(r.generatedBy).toBe("gemini");
+      expect(r.todayLine).toBeUndefined();
+    });
+    it("does not ask for a todayLine when no target is given", async () => {
+      generateContent.mockResolvedValueOnce({ text: geminiEn.text });
+      const r = await advise2();
+      expect(generateContent.mock.calls[0]![0].config.systemInstruction).not.toContain('"todayLine"');
+      expect(r.todayLine).toBeUndefined();
+    });
+    it("caches the accepted wording with the advice", async () => {
+      const good = "Go out between 14:00–17:00, keep windows shut, and wear an N95 mask.";
+      generateContent.mockResolvedValue(withLine(good));
+      vi.resetModules();
+      const { getAdvice } = await import("@/lib/ai/advisor");
+      await getAdvice(snapshot, profile, "en", true, target);
+      expect((await getAdvice(snapshot, profile, "en", true, target)).todayLine).toBe(good);
+      expect(generateContent).toHaveBeenCalledTimes(1);
+    });
+  });
 });

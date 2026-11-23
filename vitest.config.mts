@@ -18,7 +18,7 @@ export default defineConfig({
     unstubEnvs: true,
     coverage: {
       provider: "v8",
-      include: ["src/lib/**/*.ts"],
+      include: ["src/lib/**/*.ts", "src/features/**/*.ts"],
       reporter: ["text", "text-summary", "html"],
       thresholds: { lines: 80, branches: 80, functions: 80, statements: 80 },
     },
