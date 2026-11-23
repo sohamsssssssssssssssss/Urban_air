@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { CHECKLIST_STRINGS } from "@/features/checklist/strings";
 import { MASK_STRINGS } from "@/features/mask/strings";
 import { TODAY_STRINGS } from "@/features/today/strings";
 
@@ -6,6 +7,7 @@ import { TODAY_STRINGS } from "@/features/today/strings";
 const DICTIONARIES: Record<string, { en: unknown; hi: unknown }> = {
   today: TODAY_STRINGS,
   mask: MASK_STRINGS,
+  checklist: CHECKLIST_STRINGS,
 };
 
 const DEVANAGARI = /[ऀ-ॿ]/;

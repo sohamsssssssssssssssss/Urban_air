@@ -18,6 +18,15 @@ test("v2 feature smoke", async ({ page }) => {
     await expect(today).toContainText("close-fitted N95");
   });
 
+  await test.step("checklist: tick an item, it is remembered after a reload", async () => {
+    const list = page.getByRole("region", { name: "Household checklist for today" });
+    await list.getByRole("checkbox").first().check();
+    await expect(list).toContainText("1 of 4 done");
+    await page.reload();
+    await page.getByRole("button", { name: "Get my plan" }).click();
+    await expect(page.getByRole("region", { name: "Household checklist for today" })).toContainText("1 of 4 done");
+  });
+
   await test.step("mask guide: N95 for commuting, children note, cited sources", async () => {
     const guide = page.getByRole("region", { name: "Mask guide" });
     await expect(guide).toContainText("Close-fitted N95/FFP2 (or N99)");
