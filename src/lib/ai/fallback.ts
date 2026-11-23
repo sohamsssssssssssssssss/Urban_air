@@ -63,7 +63,7 @@ export function ruleBasedAdvice(s: AQSnapshot, facts: Fact[], lang: Language = "
   const section = (name: (typeof SECTIONS)[number]) =>
     facts
       .filter((f) => f.section === name)
-      .map(({ action, why, impact, personalizedFor, priority }) => ({ action, why, impact, personalizedFor, priority }))
+      .map(({ id, action, why, impact, personalizedFor, priority }) => ({ id, action, why, impact, personalizedFor, priority }))
       .sort(byPriority);
   return { summary: ruleSummary(s, lang), bestOutdoorWindow: bestOutdoorWindow(s, lang), routines: section("routines"), indoor: section("indoor"), alternatives: section("alternatives") };
 }

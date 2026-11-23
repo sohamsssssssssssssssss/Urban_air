@@ -5,6 +5,7 @@ import type { ChatTurn } from "@/lib/requests";
 import type { Language, Location, UserProfile } from "@/lib/profile";
 import type { RouteResult } from "@/lib/route";
 import type { RouteRequest } from "@/lib/route/request";
+import type { Vote } from "@/features/feedback/constants";
 import type { CompareRequest } from "@/features/compare/schema";
 import type { CompareResult } from "@/features/compare/server";
 import type { Outlook } from "@/features/outlook/server";
@@ -70,4 +71,9 @@ export async function fetchOutlook(location: Location, signal?: AbortSignal): Pr
 export async function fetchCompare(body: CompareRequest): Promise<CompareResult> {
   const res = await ok(await fetch("/api/compare", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }));
   return res.json();
+}
+
+/** Sends one anonymous tip vote. Fire-and-forget: a failure never bothers the user. */
+export function postFeedback(body: { tipId: string; vote: Vote }): void {
+  void fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true }).catch(() => undefined);
 }

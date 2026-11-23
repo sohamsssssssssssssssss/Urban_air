@@ -11,7 +11,12 @@ const advice = ruleBasedAdvice(snapshot, buildFacts(snapshot, profile, true));
 const forecast = parseForecast(openMeteo.hourly);
 
 /** Stubs every API the feature smoke test touches, so it is deterministic and needs no keys. */
-export async function stubApis(page: Page): Promise<void> {
+export async function stubApis(page: Page): Promise<{ feedback: unknown[] }> {
+  const feedback: unknown[] = [];
+  await page.route("**/api/feedback", (r) => {
+    feedback.push(r.request().postDataJSON());
+    return r.fulfill({ status: 204 });
+  });
   await page.route("**/api/air?*", (r) => r.fulfill({ json: { snapshot } }));
   await page.route("**/api/advice", (r) => {
     const kids = (r.request().postDataJSON() as { tone?: string }).tone === "kids";
@@ -25,6 +30,7 @@ export async function stubApis(page: Page): Promise<void> {
   } }));
   await page.route("**/api/route", (r) => r.fulfill({ json: routeResult }));
   await page.route("**/api/chat", (r) => r.fulfill({ contentType: "text/plain", body: "Keep the kids indoors until 13:00." }));
+  return { feedback };
 }
 
 export const axeScan = (page: Page) => new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();

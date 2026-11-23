@@ -1,7 +1,8 @@
 import type { z } from "zod";
 
 /** Per-device state lives in `localStorage` under this prefix. There are no accounts and no server copy. */
-const PREFIX = "smogsense:v1:";
+export const STORAGE_PREFIX = "smogsense:v1:";
+const PREFIX = STORAGE_PREFIX;
 const IST_OFFSET_MS = 330 * 60_000;
 
 /**

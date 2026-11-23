@@ -46,7 +46,7 @@ export function mergeModelAdvice(model: ModelAdvice, facts: Fact[], s: AQSnapsho
       if (!fact || fact.section !== section || seen.has(fact.id)) continue;
       seen.add(fact.id);
       // Facts are already in the target language, so the computed impact is always used verbatim.
-      advice[section].push({ action: item.action, why: item.why, personalizedFor: item.personalizedFor, priority: item.priority, impact: fact.impact });
+      advice[section].push({ id: fact.id, action: item.action, why: item.why, personalizedFor: item.personalizedFor, priority: item.priority, impact: fact.impact });
     }
     if (advice[section].length === 0 && facts.some((f) => f.section === section)) return null;
   }

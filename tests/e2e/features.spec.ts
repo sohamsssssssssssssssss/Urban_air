@@ -3,7 +3,7 @@ import { axeScan, stubApis } from "./stubs";
 
 // One smoke test, one step per v2 feature, so a regression names the feature that broke.
 test("v2 feature smoke", async ({ page }) => {
-  await stubApis(page);
+  const { feedback } = await stubApis(page);
   // Count every call to Notification.requestPermission: the app must never ask on its own.
   await page.addInitScript(() => {
     const counter = window as unknown as { __permissionAsks: number };
@@ -96,6 +96,16 @@ test("v2 feature smoke", async ({ page }) => {
     expect(await page.evaluate(() => window.localStorage.getItem("smogsense:v1:kids"))).toBe("true");
     await page.getByRole("checkbox", { name: "Kid-friendly wording" }).uncheck();
     await expect(page.getByRole("tab", { name: /Daily routines/ })).toBeVisible();
+  });
+
+  await test.step("tip feedback: one anonymous vote, nothing but the tip id and the vote is sent", async () => {
+    await page.getByRole("tab", { name: /Daily routines/ }).click();
+    const helpful = page.getByRole("tabpanel").getByRole("button", { name: "Helpful" }).first();
+    await helpful.click();
+    await expect(helpful).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => feedback.length).toBe(1);
+    expect(Object.keys(feedback[0] as object)).toEqual(["tipId", "vote"]);
+    expect(feedback[0]).toMatchObject({ vote: "up" });
   });
 
   await test.step("accessibility: no axe violations with all sections open", async () => {

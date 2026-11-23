@@ -3,6 +3,7 @@
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 import type { AiFailureReason } from "@/lib/ai/failure";
 import type { Advice, AdviceItem, Section } from "@/lib/ai/schema";
+import TipFeedback from "@/features/feedback/TipFeedback";
 import { UI, type Language } from "@/lib/i18n";
 
 const TABS: Section[] = ["routines", "indoor", "alternatives"];
@@ -91,6 +92,7 @@ function Item({ item, language }: { item: AdviceItem; language: Language }) {
         <dt className="font-semibold text-slate-700">{t.forYou}</dt>
         <dd>{item.personalizedFor}</dd>
       </dl>
+      {item.id && <TipFeedback tipId={item.id} language={language} />}
     </li>
   );
 }

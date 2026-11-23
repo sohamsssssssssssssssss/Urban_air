@@ -19,6 +19,15 @@ describe("AdviceTabs", () => {
     expect((await axe(container)).violations).toEqual([]);
   });
 
+  it("gives every tip a feedback control (tips without an id get none)", () => {
+    render(<AdviceTabs advice={advice} generatedBy="rules" language="en" />);
+    expect(within(screen.getByRole("tabpanel")).getAllByRole("group", { name: "Was this tip useful?" })).toHaveLength(advice.routines.length);
+    cleanup();
+    const noIds = { ...advice, routines: advice.routines.map((item) => ({ ...item, id: undefined })) };
+    render(<AdviceTabs advice={noIds} generatedBy="rules" language="en" />);
+    expect(within(screen.getByRole("tabpanel")).queryAllByRole("group", { name: "Was this tip useful?" })).toHaveLength(0);
+  });
+
   it("supports arrow, Home and End keys between tabs", async () => {
     const user = userEvent.setup();
     render(<AdviceTabs advice={advice} generatedBy="gemini" language="en" />);
