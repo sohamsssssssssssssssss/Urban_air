@@ -23,6 +23,7 @@ test("v2 feature smoke", async ({ page }) => {
     await list.getByRole("checkbox").first().check();
     await expect(list).toContainText("1 of 4 done");
     await page.reload();
+    await page.getByLabel("Children").check(); // the form itself is not persisted, only the checklist ticks
     await page.getByRole("button", { name: "Get my plan" }).click();
     await expect(page.getByRole("region", { name: "Household checklist for today" })).toContainText("1 of 4 done");
   });
