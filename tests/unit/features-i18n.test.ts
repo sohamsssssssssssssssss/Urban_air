@@ -4,6 +4,7 @@ import { CHECKLIST_STRINGS } from "@/features/checklist/strings";
 import { COMPARE_STRINGS } from "@/features/compare/strings";
 import { FEEDBACK_STRINGS } from "@/features/feedback/strings";
 import { KIDS_STRINGS } from "@/features/kids/strings";
+import { CARD_STRINGS, SHARE_STRINGS } from "@/features/share/strings";
 import { MASK_STRINGS } from "@/features/mask/strings";
 import { OUTLOOK_STRINGS } from "@/features/outlook/strings";
 import { TODAY_STRINGS } from "@/features/today/strings";
@@ -18,6 +19,8 @@ const DICTIONARIES: Record<string, { en: unknown; hi: unknown }> = {
   alerts: ALERT_STRINGS,
   kids: KIDS_STRINGS,
   feedback: FEEDBACK_STRINGS,
+  share: SHARE_STRINGS,
+  "share card image": CARD_STRINGS,
 };
 
 const DEVANAGARI = /[ऀ-ॿ]/;

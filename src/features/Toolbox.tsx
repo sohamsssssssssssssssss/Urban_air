@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { AQSnapshot } from "@/lib/aq/types";
 import type { Language } from "@/lib/i18n";
 import type { Location, UserProfile } from "@/lib/profile";
+import { cityOrDefault } from "./share/city";
 import { ambientPm25 } from "./tracker/ambient";
 import type { TripDraft } from "./tracker/schema";
 
@@ -14,6 +15,7 @@ const Outlook = dynamic(() => import("./outlook/Outlook"), { loading: () => <p>�
 const Compare = dynamic(() => import("./compare/Compare"), { loading: () => <p>…</p> });
 const Tracker = dynamic(() => import("./tracker/Tracker"), { loading: () => <p>…</p> });
 const AlertPanel = dynamic(() => import("./alerts/AlertPanel"), { loading: () => <p>…</p> });
+const ShareCard = dynamic(() => import("./share/ShareCard"), { loading: () => <p>…</p> });
 const MaskGuide = dynamic(() => import("./mask/MaskGuide"), { loading: () => <p>…</p> });
 const RoutePlanner = dynamic(() => import("@/components/RoutePlanner"), { loading: () => <p>…</p> });
 
@@ -37,6 +39,7 @@ export default function Toolbox({ language, context }: ToolboxProps) {
       <RoutePlanner language={language} onLogTrip={setDraft} />
       {/* keyed on the household mode so the starting baseline follows the profile when nothing is saved yet */}
       <Tracker key={context?.profile.commuteMode ?? "none"} language={language} defaultBaseline={context?.profile.commuteMode ?? "car"} ambientUgm3={context ? ambientPm25(context.snapshot) : null} draft={draft} />
+      <ShareCard city={cityOrDefault(context?.location.city)} language={language} />
     </>
   );
 }

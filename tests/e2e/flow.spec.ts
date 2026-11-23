@@ -35,7 +35,7 @@ test("onboarding -> AQI card -> three tabs -> chat reply, accessible throughout"
   expect((await axeScan(page)).violations).toEqual([]);
   expect(aiCalls).toEqual([]);
 
-  await page.getByLabel("City").selectOption("Delhi");
+  await page.getByRole("group", { name: "Location" }).getByLabel("City").selectOption("Delhi");
   await page.getByLabel("Children").check();
   await page.getByLabel("Usual mode", { exact: true }).selectOption("car");
   await page.getByRole("button", { name: "Get my plan" }).click();

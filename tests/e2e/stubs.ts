@@ -29,6 +29,9 @@ export async function stubApis(page: Page): Promise<{ feedback: unknown[] }> {
     b: { status: "ok", label: "Delhi", aqi: 330, category: "Very Poor", dominant: "pm25", station: "ITO, Delhi", source: "CPCB", measuredAt: "2026-11-23T05:00:00Z", stale: false, bestWindow: "13:00–17:00", windowMeasured: false },
   } }));
   await page.route("**/api/route", (r) => r.fulfill({ json: routeResult }));
+  // 1x1 transparent PNG: the real card is rendered (and checked) by the API tests, here we test the UI around it
+  const tinyPng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+  await page.route("**/api/card?*", (r) => r.fulfill({ contentType: "image/png", body: tinyPng }));
   await page.route("**/api/chat", (r) => r.fulfill({ contentType: "text/plain", body: "Keep the kids indoors until 13:00." }));
   return { feedback };
 }

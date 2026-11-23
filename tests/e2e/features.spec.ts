@@ -108,6 +108,15 @@ test("v2 feature smoke", async ({ page }) => {
     expect(feedback[0]).toMatchObject({ vote: "up" });
   });
 
+  await test.step("share card: preview, download link, and a personal card from the logged trip", async () => {
+    const share = page.getByRole("region", { name: "Share a card" });
+    await expect(share.getByRole("img")).toHaveAttribute("src", /\/api\/card\?kind=today&city=Delhi&lang=en$/);
+    await expect(share.getByRole("link", { name: "Download image" })).toHaveAttribute("download", "smogsense-card.png");
+    await share.getByLabel("Card").selectOption("weekly");
+    await expect(share.getByRole("img")).toHaveAttribute("src", /kind=weekly.*trips=\d+/);
+    await expect(share).toContainText("Never on the card: your name, exact location");
+  });
+
   await test.step("accessibility: no axe violations with all sections open", async () => {
     expect((await axeScan(page)).violations).toEqual([]);
   });
@@ -127,4 +136,18 @@ test("PWA assets: manifest, icons and the minimal service worker are served", as
   expect(sw.status()).toBe(200);
   expect(await sw.text()).toContain("notificationclick");
   expect(await sw.text()).not.toContain('addEventListener("fetch"'); // no caching, no network interception
+});
+
+test("share card API renders real PNGs in English and Hindi, and rejects bad or identifying input", async ({ request }) => {
+  const weekly = "kind=weekly&period=week&trips=5&km=62.5&co2=7.2&pm25=140.4";
+  for (const lang of ["en", "hi"]) {
+    const res = await request.get(`/api/card?${weekly}&lang=${lang}`);
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toBe("image/png");
+    const bytes = await res.body();
+    expect(bytes.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+    expect([bytes.readUInt32BE(16), bytes.readUInt32BE(20)]).toEqual([1200, 630]);
+  }
+  expect((await request.get(`/api/card?${weekly}&lang=en&name=Asha`)).status()).toBe(400);
+  expect((await request.get("/api/card?kind=today&city=Atlantis&lang=en")).status()).toBe(400);
 });
