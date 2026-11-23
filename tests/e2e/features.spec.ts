@@ -42,6 +42,13 @@ test("v2 feature smoke", async ({ page }) => {
     await expect(outlook.getByRole("img", { name: "Forecast PM2.5 for the next 48 hours" })).toBeVisible();
   });
 
+  await test.step("compare two places: side-by-side cards and a computed sentence", async () => {
+    const compare = page.getByRole("region", { name: "Compare two places" });
+    await compare.getByRole("button", { name: "Compare" }).click();
+    await expect(compare).toContainText("Mumbai has cleaner air right now: AQI 120 against 330 in Delhi (210 points lower).");
+    await expect(compare.getByRole("listitem")).toHaveCount(2);
+  });
+
   await test.step("accessibility: no axe violations with all sections open", async () => {
     expect((await axeScan(page)).violations).toEqual([]);
   });

@@ -4,6 +4,8 @@ import type { ChatTurn } from "@/lib/requests";
 import type { Language, Location, UserProfile } from "@/lib/profile";
 import type { RouteResult } from "@/lib/route";
 import type { RouteRequest } from "@/lib/route/request";
+import type { CompareRequest } from "@/features/compare/schema";
+import type { CompareResult } from "@/features/compare/server";
 import type { Outlook } from "@/features/outlook/server";
 
 /** Error carrying the API's typed error code. */
@@ -61,4 +63,10 @@ export async function fetchRoutes(body: RouteRequest): Promise<RouteResult> {
 export async function fetchOutlook(location: Location, signal?: AbortSignal): Promise<Outlook> {
   const res = await ok(await fetch(`/api/outlook?lat=${location.lat}&lon=${location.lon}`, { signal }));
   return ((await res.json()) as { outlook: Outlook }).outlook;
+}
+
+/** Live air quality at two places. */
+export async function fetchCompare(body: CompareRequest): Promise<CompareResult> {
+  const res = await ok(await fetch("/api/compare", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }));
+  return res.json();
 }
