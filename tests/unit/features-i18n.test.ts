@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ALERT_STRINGS } from "@/features/alerts/strings";
 import { CHECKLIST_STRINGS } from "@/features/checklist/strings";
 import { COMPARE_STRINGS } from "@/features/compare/strings";
 import { MASK_STRINGS } from "@/features/mask/strings";
@@ -12,6 +13,7 @@ const DICTIONARIES: Record<string, { en: unknown; hi: unknown }> = {
   checklist: CHECKLIST_STRINGS,
   outlook: OUTLOOK_STRINGS,
   compare: COMPARE_STRINGS,
+  alerts: ALERT_STRINGS,
 };
 
 const DEVANAGARI = /[ऀ-ॿ]/;

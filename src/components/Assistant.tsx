@@ -71,6 +71,7 @@ export default function Assistant() {
         </div>
       </header>
       <main id="main" tabIndex={-1} className="mx-auto grid max-w-5xl gap-6 px-4 py-8 focus:outline-none">
+        <div id="alert-slot" />
         {air.status === "ready" && request && (
           <TodayLine snapshot={air.snapshot} profile={request.profile} language={language} aiLine={plan?.language === language ? plan.todayLine : undefined} />
         )}

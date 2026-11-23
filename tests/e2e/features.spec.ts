@@ -4,6 +4,18 @@ import { axeScan, stubApis } from "./stubs";
 // One smoke test, one step per v2 feature, so a regression names the feature that broke.
 test("v2 feature smoke", async ({ page }) => {
   await stubApis(page);
+  // Count every call to Notification.requestPermission: the app must never ask on its own.
+  await page.addInitScript(() => {
+    const counter = window as unknown as { __permissionAsks: number };
+    counter.__permissionAsks = 0;
+    if ("Notification" in window) {
+      const original = Notification.requestPermission.bind(Notification);
+      Notification.requestPermission = (...args: Parameters<typeof original>) => {
+        counter.__permissionAsks++;
+        return original(...args);
+      };
+    }
+  });
   await page.goto("/");
 
   await test.step("setup: submit the household form", async () => {
@@ -66,7 +78,32 @@ test("v2 feature smoke", async ({ page }) => {
     await expect(tracker.getByLabel("Distance (km)")).toHaveValue("19.1");
   });
 
+  await test.step("air alerts: honest limit, opt-in banner at the top, permission never auto-requested", async () => {
+    const alerts = page.getByRole("region", { name: "Air alerts" });
+    await expect(alerts).toContainText("work only while SmogSense is open");
+    await alerts.getByRole("button", { name: "In-app alerts" }).click();
+    await expect(alerts).toContainText("Last checked");
+    await expect(page.locator("#alert-slot").getByRole("alert")).toContainText("Air alert: AQI 374 (Very Poor)");
+    expect(await page.evaluate(() => (window as unknown as { __permissionAsks: number }).__permissionAsks)).toBe(0);
+  });
+
   await test.step("accessibility: no axe violations with all sections open", async () => {
     expect((await axeScan(page)).violations).toEqual([]);
   });
+});
+
+test("PWA assets: manifest, icons and the minimal service worker are served", async ({ request }) => {
+  const manifest = await (await request.get("/manifest.webmanifest")).json();
+  expect(manifest).toMatchObject({ name: "SmogSense", display: "standalone", start_url: "/" });
+  expect(manifest.icons.map((i: { sizes: string }) => i.sizes)).toEqual(["any", "192x192", "512x512"]);
+  for (const size of [192, 512]) {
+    const icon = await request.get(`/pwa-icon/${size}`);
+    expect(icon.status()).toBe(200);
+    expect(icon.headers()["content-type"]).toBe("image/png");
+  }
+  expect((await request.get("/pwa-icon/300")).status()).toBe(404);
+  const sw = await request.get("/sw.js");
+  expect(sw.status()).toBe(200);
+  expect(await sw.text()).toContain("notificationclick");
+  expect(await sw.text()).not.toContain('addEventListener("fetch"'); // no caching, no network interception
 });

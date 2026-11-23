@@ -13,6 +13,7 @@ const Checklist = dynamic(() => import("./checklist/Checklist"), { loading: () =
 const Outlook = dynamic(() => import("./outlook/Outlook"), { loading: () => <p>…</p> });
 const Compare = dynamic(() => import("./compare/Compare"), { loading: () => <p>…</p> });
 const Tracker = dynamic(() => import("./tracker/Tracker"), { loading: () => <p>…</p> });
+const AlertPanel = dynamic(() => import("./alerts/AlertPanel"), { loading: () => <p>…</p> });
 const MaskGuide = dynamic(() => import("./mask/MaskGuide"), { loading: () => <p>…</p> });
 const RoutePlanner = dynamic(() => import("@/components/RoutePlanner"), { loading: () => <p>…</p> });
 
@@ -28,6 +29,7 @@ export default function Toolbox({ language, context }: ToolboxProps) {
   const [draft, setDraft] = useState<TripDraft | null>(null);
   return (
     <>
+      {context && <AlertPanel location={context.location} language={language} />}
       {context && <Checklist snapshot={context.snapshot} profile={context.profile} language={language} />}
       {context && <Outlook location={context.location} language={language} />}
       {context && <MaskGuide snapshot={context.snapshot} profile={context.profile} language={language} />}
