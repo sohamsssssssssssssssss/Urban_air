@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MASK_SOURCE } from "@/features/mask/constants";
-import { MaskInputSchema, maskFor, type MaskInput } from "@/features/mask/logic";
+import { maskFor, type MaskInput } from "@/features/mask/logic";
 
 const input = (over: Partial<MaskInput> = {}): MaskInput => ({ aqi: 150, activity: "commute", sensitive: false, child: false, ...over });
 
@@ -34,11 +34,10 @@ describe("maskFor (MoHFW 2024: N95/N99 when AQI > 200; paper/cloth ineffective)"
     expect(maskFor(input({ aqi: 250, child: false })).childNote).toBe(false);
   });
 
-  it("rejects invalid input (Zod)", () => {
-    expect(() => maskFor(input({ aqi: 501 }))).toThrow();
-    expect(() => maskFor(input({ aqi: -1 }))).toThrow();
-    expect(MaskInputSchema.safeParse({ ...input(), activity: "sleep" }).success).toBe(false);
-    expect(MaskInputSchema.safeParse({ ...input(), extra: 1 }).success).toBe(false);
+  it("rejects an AQI outside 0-500", () => {
+    for (const aqi of [501, -1, Number.NaN, Infinity]) expect(() => maskFor(input({ aqi }))).toThrow(RangeError);
+    expect(() => maskFor(input({ aqi: 0 }))).not.toThrow();
+    expect(() => maskFor(input({ aqi: 500 }))).not.toThrow();
   });
 
   it("cites a government source with a URL", () => {

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { acceptRephrase } from "@/lib/ai/rephrase";
 import { extractNumbers } from "@/lib/ai/grounding";
 import type { AQSnapshot } from "@/lib/aq/types";
-import { TodayFactsSchema, todayFacts, todaySentence, todayTarget } from "@/features/today/logic";
+import { todayFacts, todaySentence, todayTarget } from "@/features/today/logic";
 import { liveSnapshot, profile, snapshot } from "../fixtures/data";
 
 const live = liveSnapshot as AQSnapshot;
@@ -25,7 +25,6 @@ describe("todayFacts", () => {
     expect(todayFacts(at(150), { ...calm, kids: true }).mask).toBe("optional");
     expect(todayFacts(at(150), { ...calm, respiratory: true }).mask).toBe("optional");
   });
-  it("validates its own output shape", () => expect(TodayFactsSchema.safeParse(todayFacts(live, calm)).success).toBe(true));
 });
 
 describe("todaySentence", () => {

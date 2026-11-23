@@ -1,4 +1,3 @@
-import { z } from "zod";
 import type { RephraseTarget } from "@/lib/ai/rephrase";
 import type { AQSnapshot } from "@/lib/aq/types";
 import { AQI_POOR } from "@/lib/constants";
@@ -14,13 +13,13 @@ const WINDOWS_OPEN_UP_TO_AQI = 100;
 export type WindowsState = "open" | "limited" | "closed";
 
 /** The decisions behind the one-line summary, all computed from the live reading and the household. */
-export const TodayFactsSchema = z.object({
-  window: z.string(),
-  measured: z.boolean(),
-  windows: z.enum(["open", "limited", "closed"]),
-  mask: z.enum(["none", "optional", "n95"]),
-});
-export type TodayFacts = z.infer<typeof TodayFactsSchema>;
+export interface TodayFacts {
+  window: string;
+  /** True when the window comes from the station's measured last 24 h, false for the documented default. */
+  measured: boolean;
+  windows: WindowsState;
+  mask: MaskLevel;
+}
 
 /**
  * Best outdoor window, whether windows should stay shut, and whether to wear a mask when going out.
