@@ -1,7 +1,14 @@
 import type { AdviceResult } from "@/lib/ai/advisor";
+import type { Tone } from "@/lib/impact/copy/types";
 import type { AQSnapshot } from "@/lib/aq/types";
 import type { ChatTurn } from "@/lib/requests";
 import type { Language, Location, UserProfile } from "@/lib/profile";
+import type { RouteResult } from "@/lib/route";
+import type { RouteRequest } from "@/lib/route/request";
+import type { Vote } from "@/features/feedback/constants";
+import type { CompareRequest } from "@/features/compare/schema";
+import type { CompareResult } from "@/features/compare/server";
+import type { Outlook } from "@/features/outlook/server";
 
 /** Error carrying the API's typed error code. */
 export class ApiError extends Error {
@@ -28,8 +35,8 @@ export async function fetchAir(location: Location): Promise<AQSnapshot> {
 }
 
 /** Requests personalised advice. */
-export async function fetchAdvice(location: Location, profile: UserProfile, language: Language): Promise<AdviceResult & { snapshot: AQSnapshot }> {
-  const res = await ok(await fetch("/api/advice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location, profile, language }) }));
+export async function fetchAdvice(location: Location, profile: UserProfile, language: Language, tone: Tone = "standard"): Promise<AdviceResult & { snapshot: AQSnapshot }> {
+  const res = await ok(await fetch("/api/advice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ location, profile, language, tone }) }));
   return res.json();
 }
 
@@ -46,4 +53,27 @@ export async function streamChatAnswer(body: { location: Location; profile: User
     if (done) break;
     onText(decoder.decode(value, { stream: true }));
   }
+}
+
+/** Plans routes between two places. */
+export async function fetchRoutes(body: RouteRequest): Promise<RouteResult> {
+  const res = await ok(await fetch("/api/route", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }));
+  return res.json();
+}
+
+/** 48 h model forecast for a location. */
+export async function fetchOutlook(location: Location, signal?: AbortSignal): Promise<Outlook> {
+  const res = await ok(await fetch(`/api/outlook?lat=${location.lat}&lon=${location.lon}`, { signal }));
+  return ((await res.json()) as { outlook: Outlook }).outlook;
+}
+
+/** Live air quality at two places. */
+export async function fetchCompare(body: CompareRequest): Promise<CompareResult> {
+  const res = await ok(await fetch("/api/compare", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }));
+  return res.json();
+}
+
+/** Sends one anonymous tip vote. Fire-and-forget: a failure never bothers the user. */
+export function postFeedback(body: { tipId: string; vote: Vote }): void {
+  void fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true }).catch(() => undefined);
 }

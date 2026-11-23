@@ -1,0 +1,76 @@
+"use client";
+
+import { useEffect, useId, useState } from "react";
+import { CITIES, type CityName } from "@/lib/cities";
+import type { Language } from "@/lib/i18n";
+import { formatIST } from "@/lib/format";
+import { ALERT_THRESHOLDS, type AlertThreshold } from "./constants";
+import { permissionState, registerServiceWorker, requestPermission, type PermissionState } from "./notify";
+import type { AlertSettings } from "./schema";
+import { ALERT_STRINGS } from "./strings";
+import type { AlertState } from "./useAirAlerts";
+import Section from "@/components/ui/Section";
+
+const field = "mt-1 block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3 py-2";
+
+/** Alert settings, the honest "only while open" limit, an explicit permission button, and the in-app banner. */
+export interface AlertPanelProps {
+  settings: AlertSettings;
+  save: (next: Partial<AlertSettings>) => void;
+  state: AlertState;
+  language: Language;
+}
+
+export default function AlertPanel({ settings, save, state, language }: AlertPanelProps) {
+  const id = useId();
+  const t = ALERT_STRINGS[language];
+  const [permission, setPermission] = useState<PermissionState>("default");
+
+  useEffect(() => setPermission(permissionState()), []);
+
+  async function allow() {
+    // Only ever called from this button: SmogSense never asks for permission on load.
+    const result = await requestPermission();
+    setPermission(result);
+    if (result === "granted") await registerServiceWorker();
+  }
+
+  return (
+    <Section title={t.heading}>
+      <p className="mt-1 rounded border border-warn bg-warn-soft p-3 text-sm font-medium text-warn-text">{t.limit}</p>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div>
+          <label htmlFor={`${id}-city`} className="block font-medium">{t.city}</label>
+          <select id={`${id}-city`} className={field} value={settings.city} onChange={(e) => save({ city: e.target.value as CityName, lastNotified: null })}>
+            {CITIES.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label htmlFor={`${id}-level`} className="block font-medium">{t.threshold}</label>
+          <select id={`${id}-level`} className={field} value={settings.threshold} onChange={(e) => save({ threshold: Number(e.target.value) as AlertThreshold, lastNotified: null })}>
+            {ALERT_THRESHOLDS.map((v) => <option key={v} value={v}>{t.thresholds[v]}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {/* constant label + aria-pressed: the name must not change with the state */}
+        <button type="button" aria-pressed={settings.enabled} onClick={() => save({ enabled: !settings.enabled, lastNotified: null })} className={`min-h-11 rounded-control border px-5 py-2 font-semibold ${settings.enabled ? "border-brand bg-brand text-brand-ink" : "border-line-strong text-ink"}`}>
+          {t.inApp}
+        </button>
+        <span className="font-semibold">{settings.enabled ? t.on : t.off}</span>
+      </div>
+      <p aria-live="polite" className="mt-2 text-sm text-ink">
+        {!settings.enabled ? "" : state.failed ? t.checkFailed : state.snapshot && state.checkedAt ? t.status(formatIST(new Date(state.checkedAt).toISOString()), state.snapshot.aqi) : t.checking}
+      </p>
+
+      <div className="mt-4">
+        <p className="font-medium">{t.browser}</p>
+        <p className="mt-1 text-sm text-ink">{t.permission[permission]}</p>
+        {permission === "default" && <button type="button" onClick={allow} className="mt-2 min-h-11 rounded-control border border-brand px-4 py-2 font-medium text-brand-text hover:bg-brand-soft">{t.allow}</button>}
+      </div>
+      <p className="mt-3 text-xs text-ink-muted">{t.install}</p>
+
+    </Section>
+  );
+}

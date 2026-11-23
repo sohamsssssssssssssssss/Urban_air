@@ -97,4 +97,88 @@ describe("getAdvice", () => {
     await getAdvice(snapshot, { ...profile, pets: true }, "en", true);
     expect(generateContent).toHaveBeenCalledTimes(3);
   });
+
+  describe("Today in one line (Gemini rewording)", () => {
+    const target = { line: "Today the best time outside is 14:00–17:00. Keep windows shut. Wear a close-fitted N95 when you go out.", mustMention: [["14:00"], ["17:00"], ["shut", "closed"], ["mask", "N95"]] };
+    const withLine = (todayLine: string) => ({ text: JSON.stringify({ ...realEn, todayLine }) });
+    const advise2 = async (rephrase?: typeof target) => {
+      vi.resetModules();
+      const { getAdvice } = await import("@/lib/ai/advisor");
+      return getAdvice(snapshot, profile, "en", true, rephrase);
+    };
+
+    it("returns Gemini's wording when it keeps the times and decisions, in the same single call", async () => {
+      const good = "Go out between 14:00–17:00, keep windows shut, and wear an N95 mask.";
+      generateContent.mockResolvedValueOnce(withLine(good));
+      const r = await advise2(target);
+      expect(r).toMatchObject({ generatedBy: "gemini", todayLine: good });
+      expect(generateContent).toHaveBeenCalledTimes(1);
+      const call = generateContent.mock.calls[0]![0];
+      expect(call.config.systemInstruction).toContain('"todayLine"');
+      expect(call.contents).toContain(target.line); // the computed sentence is in the grounded context
+    });
+    it("drops a rewording that omits the mask but still returns the advice", async () => {
+      generateContent.mockResolvedValueOnce(withLine("Go out between 14:00–17:00 and keep windows shut."));
+      const r = await advise2(target);
+      expect(r.generatedBy).toBe("gemini");
+      expect(r.todayLine).toBeUndefined();
+    });
+    it("does not ask for a todayLine when no target is given", async () => {
+      generateContent.mockResolvedValueOnce({ text: geminiEn.text });
+      const r = await advise2();
+      expect(generateContent.mock.calls[0]![0].config.systemInstruction).not.toContain('"todayLine"');
+      expect(r.todayLine).toBeUndefined();
+    });
+    it("caches the accepted wording with the advice", async () => {
+      const good = "Go out between 14:00–17:00, keep windows shut, and wear an N95 mask.";
+      generateContent.mockResolvedValue(withLine(good));
+      vi.resetModules();
+      const { getAdvice } = await import("@/lib/ai/advisor");
+      await getAdvice(snapshot, profile, "en", true, target);
+      expect((await getAdvice(snapshot, profile, "en", true, target)).todayLine).toBe(good);
+      expect(generateContent).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("kid-friendly tone", () => {
+    const run = async (tone: "standard" | "kids", model: { text: string } | null = { text: geminiEn.text }) => {
+      vi.resetModules();
+      gemini = model === null ? null : { models: { generateContent } };
+      if (model) generateContent.mockResolvedValue(model);
+      const { getAdvice } = await import("@/lib/ai/advisor");
+      return getAdvice(snapshot, profile, "en", true, undefined, tone);
+    };
+
+    it("builds the grounded facts in kid wording and tells Gemini to write for a child", async () => {
+      await run("kids");
+      const call = generateContent.mock.calls[0]![0];
+      expect(call.config.systemInstruction).toContain("for a child, or a parent explaining to a child");
+      expect(call.contents).toContain("Go out to play between");
+      expect(call.contents).not.toContain("Schedule outdoor errands");
+    });
+    it("does not change the prompt for the standard tone", async () => {
+      await run("standard");
+      expect(generateContent.mock.calls[0]![0].config.systemInstruction).not.toContain("for a child");
+    });
+    it("falls back to the ready-made kid templates when Gemini is unavailable", async () => {
+      const r = await run("kids", null);
+      expect(r.generatedBy).toBe("rules");
+      expect(r.advice.routines[0]!.action).toMatch(/Go out to play|Grown-ups|Play and exercise|Take the/);
+      expect(r.advice.indoor.map((i) => i.action).join(" ")).toContain("air cleaner");
+      expect(r.advice.alternatives.map((i) => i.action).join(" ")).toContain("Commute by");
+    });
+    it("caches each tone separately", async () => {
+      vi.resetModules();
+      const kidFacts = buildFacts(snapshot, profile, true, "en", "kids");
+      const items = (section: string) => kidFacts.filter((f) => f.section === section).map((f) => ({ factId: f.id, action: f.action, why: f.why, impact: f.impact, personalizedFor: f.personalizedFor, priority: f.priority }));
+      const kidReply = { text: JSON.stringify({ summary: "AQI 195 (Moderate) at Talkatora Garden, Delhi - DPCC.", routines: items("routines"), indoor: items("indoor"), alternatives: items("alternatives") }) };
+      // each tone gets a reply grounded in its own facts (the standard fixture cites numbers the kid wording does not contain)
+      generateContent.mockImplementation(async ({ contents }: { contents: string }) => (contents.includes("Go out to play") ? kidReply : { text: geminiEn.text }));
+      const { getAdvice } = await import("@/lib/ai/advisor");
+      await getAdvice(snapshot, profile, "en", true, undefined, "standard");
+      await getAdvice(snapshot, profile, "en", true, undefined, "kids");
+      await getAdvice(snapshot, profile, "en", true, undefined, "kids");
+      expect(generateContent).toHaveBeenCalledTimes(2);
+    });
+  });
 });

@@ -129,3 +129,22 @@ export const POLLUTANT_LABEL: Record<Pollutant, string> = {
   co: "CO",
   nh3: "NH₃",
 };
+
+/**
+ * Inverse of `subIndex`: the concentration (µg/m³; CO in mg/m³ is converted back) that gives a sub-index.
+ * Used only when a source publishes sub-indices without concentrations (CPCB); callers must label the result approximate.
+ * @param pollutant - pollutant key
+ * @param index - sub-index 0..500
+ */
+export function concentrationFromSubIndex(pollutant: Pollutant, index: number): number {
+  const bands = BREAKPOINTS[pollutant];
+  let cLo = 0;
+  let iLo = 0;
+  for (const [i, cHi] of bands.entries()) {
+    const iHi = INDEX_UPPER[i] ?? 500;
+    if (index <= iHi) return (cLo + ((Math.max(index, 0) - iLo) / (iHi - iLo)) * (cHi - cLo)) * (pollutant === "co" ? UG_PER_MG : 1);
+    cLo = cHi;
+    iLo = iHi;
+  }
+  return (bands.at(-1) ?? 0) * (pollutant === "co" ? UG_PER_MG : 1);
+}

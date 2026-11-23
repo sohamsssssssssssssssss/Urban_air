@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aqiConcentration, aqiFromSubIndices, categoryFor, computeAqi, subIndex, subIndicesFor } from "@/lib/aq/naqi";
+import { aqiConcentration, aqiFromSubIndices, categoryFor, computeAqi, concentrationFromSubIndex, subIndex, subIndicesFor } from "@/lib/aq/naqi";
 import { HOUR_MS } from "@/lib/constants";
 import type { Pollutant } from "@/lib/aq/types";
 
@@ -76,5 +76,21 @@ describe("sub-index helpers", () => {
   it("takes AQI from published sub-indices (CPCB) and requires PM", () => {
     expect(aqiFromSubIndices({ pm25: 222, pm10: 135, co: 12 })).toEqual({ aqi: 222, category: "Poor", dominant: "pm25" });
     expect(aqiFromSubIndices({ co: 300 })).toBeNull();
+  });
+});
+
+describe("concentrationFromSubIndex", () => {
+  it.each([[0, 0], [50, 30], [100, 60], [150, 75], [200, 90], [300, 120], [400, 250], [500, 380]])("PM2.5 sub-index %i -> %f µg/m³", (index, ugm3) => {
+    expect(concentrationFromSubIndex("pm25", index)).toBeCloseTo(ugm3, 6);
+  });
+  it("round-trips with subIndex across bands and pollutants", () => {
+    for (const p of ["pm25", "pm10", "no2", "o3", "so2", "nh3", "co"] as const) {
+      for (const idx of [10, 75, 160, 250, 350, 450]) expect(Math.abs(subIndex(p, concentrationFromSubIndex(p, idx)) - idx)).toBeLessThanOrEqual(1);
+    }
+  });
+  it("converts CO back to µg/m³ and clamps beyond the top band", () => {
+    expect(concentrationFromSubIndex("co", 50)).toBe(1000);
+    expect(concentrationFromSubIndex("pm25", 9999)).toBe(380);
+    expect(concentrationFromSubIndex("pm25", -5)).toBe(0);
   });
 });

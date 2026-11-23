@@ -28,6 +28,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // The share card reads its font files at runtime, so tell the file tracer to ship them with the function.
+  outputFileTracingIncludes: { "/api/card": ["./src/features/share/fonts/**"] },
   poweredByHeader: false,
   reactStrictMode: true,
   async headers() {
