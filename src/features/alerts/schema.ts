@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../shared/zod";
 import { CITY_NAMES } from "@/lib/cities";
 import { ALERT_THRESHOLDS } from "./constants";
 

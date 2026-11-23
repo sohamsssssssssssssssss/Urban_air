@@ -87,10 +87,40 @@ async function deployed(city: (typeof CITIES)[number]) {
   if (!chat.ok || !answer.trim()) fail(`/api/chat ${chat.status}`);
 }
 
+/** v2 endpoints. None of them call Gemini, so they also run with --no-ai. */
+async function v2Checks() {
+  console.log("\nv2 features");
+  if (!BASE_URL) {
+    const { getOutlook } = await import("../src/features/outlook/server");
+    const [outlook, ms] = await timed(() => getOutlook(19.07, 72.88));
+    console.log(`  Outlook ${ms} ms | ${outlook.hours.length} h forecast (${outlook.source}) | ${outlook.windows.length} cleanest windows`);
+    if (outlook.hours.length < 24 || outlook.windows.length === 0) fail("forecast looks empty");
+    return;
+  }
+  const get = async (label: string, path: string, init?: RequestInit) => {
+    const [res, ms] = await timed(() => fetch(`${BASE_URL}${path}`, init));
+    const bytes = Buffer.from(await res.arrayBuffer());
+    console.log(`  ${label.padEnd(9)} ${ms} ms | ${res.status} ${res.headers.get("content-type")} ${bytes.length} B`);
+    return { res, bytes };
+  };
+  const { res: outRes, bytes: outBytes } = await get("Outlook", "/api/outlook?lat=19.07&lon=72.88");
+  const outlook = outRes.ok ? (JSON.parse(outBytes.toString()) as { outlook: { hours: unknown[]; windows: unknown[] } }).outlook : null;
+  if (!outlook || outlook.hours.length < 24 || outlook.windows.length === 0) fail("/api/outlook returned no usable forecast");
+  const { res: cmp, bytes: cmpBytes } = await get("Compare", "/api/compare", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ a: { lat: 19.076, lon: 72.8777, city: "Mumbai" }, b: { lat: 28.6139, lon: 77.209, city: "Delhi" }, language: "en" }) });
+  const sides = cmp.ok ? (JSON.parse(cmpBytes.toString()) as Record<string, { status: string }>) : {};
+  if (sides.a?.status !== "ok" || sides.b?.status !== "ok") fail("/api/compare did not return both places");
+  const { res: card, bytes: png } = await get("Card", "/api/card?kind=weekly&period=week&trips=5&km=62.5&co2=7.2&pm25=140.4&lang=hi");
+  if (!card.ok || png.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a" || png.readUInt32BE(16) !== 1200 || png.readUInt32BE(20) !== 630) fail("/api/card did not return a 1200x630 PNG");
+  const { res: manifest } = await get("Manifest", "/manifest.webmanifest");
+  const { res: sw } = await get("Worker", "/sw.js");
+  if (!manifest.ok || !sw.ok) fail("PWA assets missing");
+}
+
 console.log(`SmogSense live smoke · ${new Date().toISOString()} · ${BASE_URL ? `deployed ${BASE_URL}` : "direct upstream calls"}${NO_AI ? " · air quality only" : ""}`);
 for (const city of CITIES) {
   console.log(`\n${city.name} (${city.lat}, ${city.lon})`);
   await (BASE_URL ? deployed(city) : direct(city));
 }
+await v2Checks();
 console.log(failures ? `\n${failures} check(s) failed` : "\nAll live checks passed");
 process.exit(failures ? 1 : 0);

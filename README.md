@@ -89,6 +89,8 @@ Lighthouse 13.6.0 audited the production homepage on 22 Nov 2026.
 | Mobile | 100 | 100 | 100 | 100 |
 | Desktop | 100 | 100 | 100 | 100 |
 
+**v2 build** (all ten features), audited on 23 Nov 2026 against a local production build of the same commit, because Vercel preview deployments sit behind a login: Performance 100 / Accessibility 100 / Best Practices 100 / SEO 100 on both mobile and desktop (FCP 0.8 s, LCP 0.8 s, TBT 20 ms, CLS 0 on mobile). First-load JS is 120 kB: every new section is a lazy chunk. An earlier v2 build scored 96 on Best Practices because Zod 4 probes for `new Function`, which our CSP forbids and Chrome logs as an issue; client code now uses a Zod copy with JIT off (`src/features/shared/zod.ts`, with a test that keeps it that way). Chrome's issue log and console were also clean across the full flow (submit, forecast, compare, alerts, tracker, share).
+
 ## How the AI is grounded (no hallucinated AQI)
 
 1. **No data, no AI.** `/api/advice` and `/api/chat` call `getAirQuality` first. If every source fails, they return 503 before any model call.

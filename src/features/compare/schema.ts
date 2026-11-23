@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../shared/zod";
 import { CITY_NAMES } from "@/lib/cities";
 import { ROUTE_PLACE_MAX_CHARS } from "@/lib/route/constants";
 import { LanguageSchema } from "@/lib/profile";

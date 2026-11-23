@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../shared/zod";
 import { COMMUTE_MODES } from "@/lib/commute";
 import { COMMUTE_MAX_KM } from "@/lib/constants";
 import { MAX_TRIPS } from "./constants";

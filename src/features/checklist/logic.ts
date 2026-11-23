@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../shared/zod";
 import type { Fact } from "@/lib/ai/schema";
 import type { AQSnapshot } from "@/lib/aq/types";
 import { AQI_POOR } from "@/lib/constants";
