@@ -14,7 +14,7 @@ const Checklist = dynamic(() => import("@/features/checklist/Checklist"), { load
 /** Air hero, the one-line summary (best window), mask guide and household checklist. */
 export default function TodaySection({ app }: { app: AppApi }) {
   const { setup, air, plan, language } = app;
-  if (!app.checked) return <Skeleton className="h-72" />;
+  if (!app.checked) return <Skeleton className="h-[34rem]" />;
   if (!setup) return <Onboarding language={language} onSubmit={app.submit} />;
   return (
     <Lazy>

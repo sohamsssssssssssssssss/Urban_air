@@ -62,7 +62,7 @@ function Tip({ item, language }: { item: AdviceItem; language: Language }) {
   const percent = impactPercent(item.impact);
   return (
     <Card as="li" className="p-4 shadow-none">
-      <div className="flex flex-wrap items-start justify-between gap-2">
+      <div className="flex flex-col-reverse items-start gap-2 sm:flex-row sm:justify-between">
         <h3 className="min-w-0 flex-1 text-base font-bold">{item.action}</h3>
         <Pill tone={PRIORITY_TONE[item.priority]}>{t.priority[item.priority]}</Pill>
       </div>
