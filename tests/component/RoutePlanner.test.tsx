@@ -38,6 +38,21 @@ describe("RouteResults", () => {
     expect(container.textContent).not.toMatch(/\bmeasured (exposure|PM)/i);
   });
 
+  it("offers 'Log this trip' per route when a handler is given, and hands over mode, distance and air level", async () => {
+    const onLogTrip = vi.fn();
+    const user = userEvent.setup();
+    const { container } = render(<RouteResults result={routeResult} language="en" onLogTrip={onLogTrip} />);
+    expect(screen.getAllByRole("button", { name: /^Log this trip: / })).toHaveLength(8);
+    await user.click(screen.getByRole("button", { name: "Log this trip: cycling, route 2" }));
+    expect(onLogTrip).toHaveBeenCalledWith({ mode: "cycle", km: 19.1, ambientUgm3: 70 });
+    expect((await axe(container)).violations).toEqual([]);
+  });
+
+  it("shows no log buttons without a handler", () => {
+    render(<RouteResults result={routeResult} language="en" />);
+    expect(screen.queryByRole("button", { name: /Log this trip/ })).toBeNull();
+  });
+
   it("flags approximate air data and explains computed reasons", () => {
     render(<RouteResults result={{ ...routeResult, approximate: true, unavailableModes: ["walk"] }} language="en" />);
     expect(screen.getByText(/Approximate: no reference monitor within 25 km/)).toBeTruthy();

@@ -5,6 +5,7 @@ import { buildFacts } from "../../src/lib/impact/facts";
 import { cleanestWindows, parseForecast } from "../../src/features/outlook/logic";
 import { profile, snapshot } from "../fixtures/data";
 import openMeteo from "../fixtures/live/open-meteo-mumbai.json";
+import { routeResult } from "../fixtures/route";
 
 const advice = ruleBasedAdvice(snapshot, buildFacts(snapshot, profile, true));
 const forecast = parseForecast(openMeteo.hourly);
@@ -18,6 +19,7 @@ export async function stubApis(page: Page): Promise<void> {
     a: { status: "ok", label: "Mumbai", aqi: 120, category: "Moderate", dominant: "pm25", station: "Worli, Mumbai - MPCB", source: "OpenAQ", measuredAt: "2026-11-23T05:00:00Z", stale: false, bestWindow: "14:00–17:00", windowMeasured: true },
     b: { status: "ok", label: "Delhi", aqi: 330, category: "Very Poor", dominant: "pm25", station: "ITO, Delhi", source: "CPCB", measuredAt: "2026-11-23T05:00:00Z", stale: false, bestWindow: "13:00–17:00", windowMeasured: false },
   } }));
+  await page.route("**/api/route", (r) => r.fulfill({ json: routeResult }));
   await page.route("**/api/chat", (r) => r.fulfill({ contentType: "text/plain", body: "Keep the kids indoors until 13:00." }));
 }
 

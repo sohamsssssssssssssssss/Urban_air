@@ -2,9 +2,10 @@ import { MODE_NAME, UI, type Language } from "@/lib/i18n";
 import { ROUTE_UI } from "@/lib/i18n.route";
 import type { RouteResult } from "@/lib/route";
 import type { ScoredRoute } from "@/lib/route/types";
+import type { TripDraft } from "@/features/tracker/schema";
 
 /** Route cards (Cleanest / Fastest / Best balance) and the full alternatives table. Everything is labelled "estimated". */
-export default function RouteResults({ result, language }: { result: RouteResult; language: Language }) {
+export default function RouteResults({ result, language, onLogTrip }: { result: RouteResult; language: Language; onLogTrip?: (draft: TripDraft) => void }) {
   const t = ROUTE_UI[language];
   const names = MODE_NAME[language];
   const stats = (r: ScoredRoute) => [
@@ -44,7 +45,7 @@ export default function RouteResults({ result, language }: { result: RouteResult
         <caption className="mb-1 text-left font-semibold">{t.tableCaption}</caption>
         <thead>
           <tr className="border-b border-slate-300">
-            {[t.mode, t.route, t.duration, t.distance, t.pm25, t.co2, t.roads].map((h) => <th key={h} scope="col" className="py-1 pr-3">{h}</th>)}
+            {[t.mode, t.route, t.duration, t.distance, t.pm25, t.co2, t.roads, ...(onLogTrip ? [t.logTrip] : [])].map((h) => <th key={h} scope="col" className="py-1 pr-3">{h}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -56,7 +57,12 @@ export default function RouteResults({ result, language }: { result: RouteResult
               <td className="py-1 pr-3 tabular-nums">{r.distanceKm} {t.km}</td>
               <td className="py-1 pr-3 tabular-nums">{r.pm25Ug} {t.ug}</td>
               <td className="py-1 pr-3 tabular-nums">{r.co2Kg} {t.kg}</td>
-              <td className="py-1 text-xs">{r.roadAdjustment === "applied" ? t.roadApplied(Math.round(r.majorShare * 100)) : t.roadNot}</td>
+              <td className="py-1 pr-3 text-xs">{r.roadAdjustment === "applied" ? t.roadApplied(Math.round(r.majorShare * 100)) : t.roadNot}</td>
+              {onLogTrip && (
+                <td className="py-1">
+                  <button type="button" onClick={() => onLogTrip({ mode: r.mode, km: r.distanceKm, ambientUgm3: r.ambientUgm3 })} aria-label={t.logTripFor(names[r.mode], r.alt)} className="min-h-11 rounded-md border border-blue-700 px-3 py-1 font-medium text-blue-800 hover:bg-blue-50">{t.logTrip}</button>
+                </td>
+              )}
             </tr>
           )))}
         </tbody>

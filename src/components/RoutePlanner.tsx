@@ -7,12 +7,13 @@ import { errorMessage, type Language } from "@/lib/i18n";
 import { ROUTE_UI } from "@/lib/i18n.route";
 import type { RouteResult } from "@/lib/route";
 import { ApiError, fetchRoutes } from "./apiClient";
+import type { TripDraft } from "@/features/tracker/schema";
 import RouteResults from "./RouteResults";
 
 const field = "mt-1 block min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2";
 
 /** Origin/destination form that asks /api/route for routes ranked by estimated PM2.5 inhaled. */
-export default function RoutePlanner({ language }: { language: Language }) {
+export default function RoutePlanner({ language, onLogTrip }: { language: Language; onLogTrip?: (draft: TripDraft) => void }) {
   const id = useId();
   const t = ROUTE_UI[language];
   const [from, setFrom] = useState("");
@@ -62,7 +63,7 @@ export default function RoutePlanner({ language }: { language: Language }) {
       </form>
       <div aria-live="polite" aria-busy={busy}>
         {error && <p role="alert" className="mt-3 rounded-lg border border-red-800 bg-red-50 p-3 text-red-900">{error}</p>}
-        {result && <RouteResults result={result} language={language} />}
+        {result && <RouteResults result={result} language={language} onLogTrip={onLogTrip} />}
       </div>
     </section>
   );

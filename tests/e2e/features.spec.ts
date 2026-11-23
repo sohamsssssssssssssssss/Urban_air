@@ -49,6 +49,23 @@ test("v2 feature smoke", async ({ page }) => {
     await expect(compare.getByRole("listitem")).toHaveCount(2);
   });
 
+  await test.step("commute tracker: log a trip manually, and from a planned route", async () => {
+    const tracker = page.getByRole("region", { name: "Commute impact tracker" });
+    await tracker.getByLabel("Mode", { exact: true }).selectOption("metro");
+    await tracker.getByLabel("Distance (km)").fill("10");
+    await tracker.getByRole("button", { name: "Log trip" }).click();
+    await expect(tracker.getByText("Trip logged.")).toBeVisible();
+    await expect(tracker.getByRole("heading", { name: "This week" }).locator("..")).toContainText("1 trip · 10 km");
+
+    const planner = page.getByRole("region", { name: "Cleaner routes" });
+    await planner.getByLabel("From").fill("Colaba Causeway, Mumbai");
+    await planner.getByLabel("To").fill("Bandra Kurla Complex, Mumbai");
+    await planner.getByRole("button", { name: "Find routes" }).click();
+    await planner.getByRole("button", { name: "Log this trip: cycling, route 1" }).click();
+    await expect(tracker).toContainText("Prefilled from the route you chose");
+    await expect(tracker.getByLabel("Distance (km)")).toHaveValue("19.1");
+  });
+
   await test.step("accessibility: no axe violations with all sections open", async () => {
     expect((await axeScan(page)).violations).toEqual([]);
   });

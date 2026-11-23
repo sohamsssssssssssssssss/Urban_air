@@ -37,7 +37,7 @@ test("onboarding -> AQI card -> three tabs -> chat reply, accessible throughout"
 
   await page.getByLabel("City").selectOption("Delhi");
   await page.getByLabel("Children").check();
-  await page.getByLabel("Usual mode").selectOption("car");
+  await page.getByLabel("Usual mode", { exact: true }).selectOption("car");
   await page.getByRole("button", { name: "Get my plan" }).click();
 
   const card = page.getByRole("region", { name: "Air quality now" });

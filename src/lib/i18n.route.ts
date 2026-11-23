@@ -30,6 +30,8 @@ export interface RouteStrings {
   roads: string;
   roadApplied: (pct: number) => string;
   roadNot: string;
+  logTrip: string;
+  logTripFor: (mode: string, alt: number) => string;
   twoWheelerNote: string;
   noneFor: (modes: string) => string;
   computedNote: (reason: string) => string;
@@ -69,6 +71,8 @@ const en: RouteStrings = {
   roads: "Road data",
   roadApplied: (pct) => `main-road adjustment applied (${pct}% of route)`,
   roadNot: "not applied (OSRM gave no road class)",
+  logTrip: "Log this trip",
+  logTripFor: (mode, alt) => `Log this trip: ${mode}, route ${alt}`,
   twoWheelerNote: "Two-wheelers use the car road network and car travel times.",
   noneFor: (modes) => `No route found for: ${modes}.`,
   computedNote: (reason) => `Reasons written from the computed numbers (${reason}).`,
@@ -108,6 +112,8 @@ const hi: RouteStrings = {
   roads: "सड़क डेटा",
   roadApplied: (pct) => `मुख्य सड़क समायोजन लागू (रास्ते का ${pct}%)`,
   roadNot: "लागू नहीं (OSRM ने सड़क श्रेणी नहीं दी)",
+  logTrip: "यह सफ़र दर्ज करें",
+  logTripFor: (mode, alt) => `यह सफ़र दर्ज करें: ${mode}, रास्ता ${alt}`,
   twoWheelerNote: "दोपहिया के लिए कार का सड़क नेटवर्क और कार का यात्रा समय इस्तेमाल होता है।",
   noneFor: (modes) => `इनके लिए रास्ता नहीं मिला: ${modes}।`,
   computedNote: (reason) => `कारण गणना किए गए आंकड़ों से लिखे गए हैं (${reason})।`,
