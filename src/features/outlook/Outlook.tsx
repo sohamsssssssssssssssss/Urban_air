@@ -1,0 +1,78 @@
+"use client";
+
+import { useCallback, useEffect, useId, useState } from "react";
+import { ApiError, fetchOutlook } from "@/components/apiClient";
+import { CATEGORY_LABEL, errorMessage, type Language } from "@/lib/i18n";
+import type { Location } from "@/lib/profile";
+import type { Outlook as OutlookData } from "./server";
+import { formatWhen, formatWindowWhen } from "./logic";
+import OutlookChart from "./OutlookChart";
+import { OUTLOOK_STRINGS } from "./strings";
+
+/** 48-hour model forecast with the cleanest windows, a chart with a text alternative, and an hourly table. */
+export default function Outlook({ location, language }: { location: Location; language: Language }) {
+  const id = useId();
+  const t = OUTLOOK_STRINGS[language];
+  const [data, setData] = useState<OutlookData | null>(null);
+  const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setData(null);
+    setError("");
+    fetchOutlook(location, controller.signal)
+      .then(setData)
+      .catch((err: unknown) => {
+        if (controller.signal.aborted) return;
+        setError(err instanceof ApiError ? errorMessage(language, err.code, err.message) : errorMessage(language));
+      });
+    return () => controller.abort();
+  }, [location, language, attempt]);
+
+  return (
+    <section aria-labelledby={`${id}-h`} aria-busy={!data && !error} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h2 id={`${id}-h`} className="text-xl font-semibold">{t.heading}</h2>
+      <p className="mt-1 inline-block rounded border-2 border-amber-800 bg-amber-50 px-2 py-1 text-sm font-semibold text-amber-950">{t.badge}</p>
+      <p className="mt-2 text-slate-800">{t.intro}</p>
+      {!data && !error && <p className="mt-3 text-slate-700">{t.loading}</p>}
+      {error && (
+        <div role="alert" className="mt-3 rounded-lg border border-red-800 bg-red-50 p-3 text-red-900">
+          <p>{error}</p>
+          <button type="button" onClick={retry} className="mt-2 min-h-11 rounded-md border border-red-800 px-4 py-2 font-medium hover:bg-red-100">{t.retry}</button>
+        </div>
+      )}
+      {data && (
+        <>
+          <h3 className="mt-4 font-semibold">{t.windowsHeading}</h3>
+          {data.windows.length === 0 ? <p>{t.noWindows}</p> : (
+            <ol className="mt-1 list-decimal space-y-1 pl-5">
+              {data.windows.map((w) => <li key={w.rank}>{t.windowLine({ when: formatWindowWhen(w, language), avg: w.avgPm25, category: CATEGORY_LABEL[language][w.category] })}</li>)}
+            </ol>
+          )}
+          <p className="mt-1 text-xs text-slate-700">{t.estimateNote}</p>
+          <OutlookChart hours={data.hours} windows={data.windows} language={language} />
+          <details className="mt-3">
+            <summary className="min-h-11 cursor-pointer py-2 font-medium text-blue-800">{t.showTable}</summary>
+            <div className="max-h-72 overflow-auto" tabIndex={0} role="region" aria-label={t.showTable}>
+              <table className="w-full text-left text-sm">
+                <thead><tr className="border-b border-slate-300">{[t.colTime, t.colPm25, t.colPm10].map((h) => <th key={h} scope="col" className="py-1 pr-3">{h}</th>)}</tr></thead>
+                <tbody>
+                  {data.hours.map((h) => (
+                    <tr key={h.at} className="border-b border-slate-100">
+                      <th scope="row" className="py-1 pr-3 font-normal">{formatWhen(h.at, language)}</th>
+                      <td className="py-1 pr-3 tabular-nums">{h.pm25 ?? "—"}</td>
+                      <td className="py-1 tabular-nums">{h.pm10 ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </>
+      )}
+      <p className="mt-3 text-xs text-slate-700">{t.attribution}</p>
+    </section>
+  );
+}

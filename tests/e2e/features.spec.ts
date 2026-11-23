@@ -35,6 +35,13 @@ test("v2 feature smoke", async ({ page }) => {
     await expect(guide.getByRole("link", { name: /Ministry of Health and Family Welfare/ })).toBeVisible();
   });
 
+  await test.step("48h outlook: labelled as a forecast, three windows, chart with a text alternative", async () => {
+    const outlook = page.getByRole("region", { name: "Next 48 hours" });
+    await expect(outlook).toContainText("Model forecast (CAMS), not a measurement");
+    await expect(outlook.getByRole("listitem")).toHaveCount(3);
+    await expect(outlook.getByRole("img", { name: "Forecast PM2.5 for the next 48 hours" })).toBeVisible();
+  });
+
   await test.step("accessibility: no axe violations with all sections open", async () => {
     expect((await axeScan(page)).violations).toEqual([]);
   });

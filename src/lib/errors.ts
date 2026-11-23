@@ -1,5 +1,5 @@
 /** Machine-readable error codes returned by the API. */
-export type ErrorCode = "BAD_REQUEST" | "RATE_LIMITED" | "AQ_UNAVAILABLE" | "AI_UNAVAILABLE" | "PLACE_NOT_FOUND" | "GEOCODE_UNAVAILABLE" | "ROUTE_UNAVAILABLE" | "INTERNAL";
+export type ErrorCode = "BAD_REQUEST" | "RATE_LIMITED" | "AQ_UNAVAILABLE" | "AI_UNAVAILABLE" | "PLACE_NOT_FOUND" | "GEOCODE_UNAVAILABLE" | "ROUTE_UNAVAILABLE" | "FORECAST_UNAVAILABLE" | "INTERNAL";
 
 /** Base class for expected, user-safe errors. The message is safe to show to clients. */
 export class AppError extends Error {
@@ -59,6 +59,13 @@ export class GeocodeUnavailableError extends AppError {
 export class RouteUnavailableError extends AppError {
   constructor(message = "No route could be found between these places right now.") {
     super("ROUTE_UNAVAILABLE", 503, message);
+  }
+}
+
+/** The air-quality forecast service (Open-Meteo) failed or timed out. */
+export class ForecastUnavailableError extends AppError {
+  constructor(message = "The air-quality forecast is unavailable right now. Please try again shortly.") {
+    super("FORECAST_UNAVAILABLE", 503, message);
   }
 }
 

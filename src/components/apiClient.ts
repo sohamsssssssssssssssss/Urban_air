@@ -4,6 +4,7 @@ import type { ChatTurn } from "@/lib/requests";
 import type { Language, Location, UserProfile } from "@/lib/profile";
 import type { RouteResult } from "@/lib/route";
 import type { RouteRequest } from "@/lib/route/request";
+import type { Outlook } from "@/features/outlook/server";
 
 /** Error carrying the API's typed error code. */
 export class ApiError extends Error {
@@ -54,4 +55,10 @@ export async function streamChatAnswer(body: { location: Location; profile: User
 export async function fetchRoutes(body: RouteRequest): Promise<RouteResult> {
   const res = await ok(await fetch("/api/route", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }));
   return res.json();
+}
+
+/** 48 h model forecast for a location. */
+export async function fetchOutlook(location: Location, signal?: AbortSignal): Promise<Outlook> {
+  const res = await ok(await fetch(`/api/outlook?lat=${location.lat}&lon=${location.lon}`, { signal }));
+  return ((await res.json()) as { outlook: Outlook }).outlook;
 }

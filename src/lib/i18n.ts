@@ -136,6 +136,7 @@ const en = {
     PLACE_NOT_FOUND: "We couldn't find that place. Try a more specific name or add the city.",
     GEOCODE_UNAVAILABLE: "Place search is unavailable right now. Please try again shortly.",
     ROUTE_UNAVAILABLE: "No route could be found between these places right now.",
+    FORECAST_UNAVAILABLE: "The air-quality forecast is unavailable right now. Please try again shortly.",
     NETWORK: "Couldn't reach SmogSense. Check your connection and try again.",
   },
 };

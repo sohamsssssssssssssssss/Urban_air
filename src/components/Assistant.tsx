@@ -85,7 +85,7 @@ export default function Assistant() {
         {planError && <p role="alert" className="rounded-lg border border-red-800 bg-red-50 p-3 text-red-900">{planError}</p>}
         {plan && <AdviceTabs {...plan} />}
         {plan && request && <ChatPanel {...request} />}
-      <Toolbox language={language} context={air.status === "ready" && request ? { snapshot: air.snapshot, profile: request.profile } : undefined} />
+      <Toolbox language={language} context={air.status === "ready" && request ? { snapshot: air.snapshot, profile: request.profile, location: request.location } : undefined} />
       </main>
       <footer className="border-t border-slate-200 bg-white">
         <p className="mx-auto max-w-5xl px-4 py-6 text-sm text-slate-700">
