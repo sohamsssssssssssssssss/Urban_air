@@ -63,7 +63,7 @@ export const hi: UiStrings = {
     notReported: "यह स्टेशन इसकी रीडिंग नहीं देता।",
   },
   plan: {
-    heading: "आपकी योजना",
+    heading: "सिफ़ारिशें",
     byGemini: "लाइव रीडिंग के आधार पर Gemini ने आपके लिए बनाई। असर के आंकड़े SmogSense गणना करता है, AI नहीं।",
     byRules: (reason: string) => `नियम-आधारित योजना (${reason})। असर के आंकड़े प्रकाशित शोध से गणना किए गए हैं।`,
     aiReasons: { quota: "AI अभी व्यस्त (कोटा)", auth: "AI कॉन्फ़िगर नहीं है", model: "AI मॉडल उपलब्ध नहीं", schema: "AI का उत्तर जाँच में विफल", timeout: "AI में देरी हुई", other: "AI उपलब्ध नहीं" },
@@ -75,7 +75,7 @@ export const hi: UiStrings = {
     impact: "असर",
     forYou: "आपके लिए",
     priority: { high: "उच्च प्राथमिकता", medium: "मध्यम प्राथमिकता", low: "वैकल्पिक" },
-    building: "आपकी योजना बन रही है…",
+    building: "लाइव रीडिंग से आपकी योजना लिखी जा रही है…",
   },
   chat: {
     heading: "आगे सवाल पूछें",

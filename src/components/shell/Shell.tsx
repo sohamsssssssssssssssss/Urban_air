@@ -54,12 +54,12 @@ export default function Shell() {
       <Nav active={active} language={app.language} />
       <div className="lg:pl-sidebar">
         <header className="border-b border-line bg-surface">
-          <div className="mx-auto flex max-w-shell items-center justify-between gap-3 px-4 py-3 lg:px-8">
+          <div className="mx-auto flex max-w-shell items-center justify-between gap-3 px-4 py-3">
             <p className="flex items-center gap-2 text-lg font-extrabold tracking-tight lg:invisible"><Logo className="h-8 w-8" />{t.brand}</p>
             <LanguageSwitch language={app.language} onChange={app.setLanguage} />
           </div>
         </header>
-        <main id="main" tabIndex={-1} className="mx-auto grid min-h-[100dvh] grid-cols-1 max-w-shell gap-6 px-4 pb-40 pt-6 focus:outline-none lg:px-8 lg:pb-24">
+        <main id="main" tabIndex={-1} className="mx-auto grid min-h-[100dvh] grid-cols-1 max-w-shell gap-6 px-4 pt-6 focus:outline-none lg:pb-24">
           <div id={ALERT_SLOT_ID} />
           {SECTIONS.map((id) =>
             visited.has(id) ? (

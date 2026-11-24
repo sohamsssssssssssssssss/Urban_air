@@ -100,7 +100,7 @@ const en = {
     notReported: "Not reported by this station.",
   },
   plan: {
-    heading: "Your plan",
+    heading: "Recommendations",
     byGemini: "Personalised by Gemini from the live reading. Impact numbers are calculated by SmogSense, not the AI.",
     byRules: (reason: string) => `Rule-based plan (${reason}). Impact numbers are calculated from published research factors.`,
     aiReasons: { quota: "AI busy (quota)", auth: "AI not configured", model: "AI model unavailable", schema: "AI answer failed validation", timeout: "AI timed out", other: "AI unavailable" } as Record<AiFailureReason, string>,
@@ -112,7 +112,7 @@ const en = {
     impact: "Impact",
     forYou: "For you",
     priority: { high: "High priority", medium: "Medium priority", low: "Nice to have" },
-    building: "Building your personalised plan…",
+    building: "Writing your plan from the live reading…",
   },
   chat: {
     heading: "Ask a follow-up",

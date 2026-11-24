@@ -23,7 +23,7 @@ export default function Section({ title, description, children, className, busy,
     <section aria-labelledby={`${id}-h`} aria-busy={busy || undefined} className={cn("rounded-card border border-line bg-surface p-5 shadow-card", className)}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 id={`${id}-h`} className="text-xl font-bold tracking-tight">{title}</h2>
+          <h3 id={`${id}-h`} className="text-xl font-bold tracking-tight">{title}</h3>
           {description && <p className="mt-1 text-ink-muted">{description}</p>}
         </div>
         {actions}

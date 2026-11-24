@@ -39,7 +39,7 @@ export interface RouteStrings {
 }
 
 const en: RouteStrings = {
-  heading: "Cleaner routes",
+  heading: "Plan a trip",
   intro: "Pick where you're going and see which route and mode expose you to the least PM2.5, not just the fastest.",
   from: "From",
   to: "To",
@@ -80,7 +80,7 @@ const en: RouteStrings = {
 };
 
 const hi: RouteStrings = {
-  heading: "साफ़ हवा वाले रास्ते",
+  heading: "यात्रा की योजना",
   intro: "कहाँ जाना है चुनें और देखें कि कौन सा रास्ता और साधन सबसे कम PM2.5 वाली हवा में ले जाता है, सिर्फ़ सबसे तेज़ नहीं।",
   from: "कहाँ से",
   to: "कहाँ तक",

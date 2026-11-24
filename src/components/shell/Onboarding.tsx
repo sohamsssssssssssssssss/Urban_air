@@ -50,7 +50,7 @@ export default function Onboarding({ language, onSubmit }: OnboardingProps) {
   }
 
   return (
-    <Section title={t.title} description={t.intro} className="mx-auto max-w-2xl">
+    <Section title={t.title} description={t.intro} className="max-w-[640px]">
       <form onSubmit={submit} className="mt-5 grid gap-6">
         <div>
           <label htmlFor={`${id}-city`} className="block font-bold">{t.city}</label>

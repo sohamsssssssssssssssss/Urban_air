@@ -69,7 +69,7 @@ test("v2 feature smoke", async ({ page }) => {
     await expect(tracker.getByRole("heading", { name: "This week" }).locator("..")).toContainText("1 trip · 10 km");
 
     await openSection(page, "Routes");
-    const planner = page.getByRole("region", { name: "Cleaner routes" });
+    const planner = page.getByRole("region", { name: "Plan a trip" });
     await planner.getByLabel("From").fill("Colaba Causeway, Mumbai");
     await planner.getByLabel("To", { exact: true }).fill("Bandra Kurla Complex, Mumbai");
     await planner.getByRole("button", { name: "Find routes" }).click();

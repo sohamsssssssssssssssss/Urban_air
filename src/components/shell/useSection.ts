@@ -22,8 +22,13 @@ export function useSection() {
       setVisited((v) => (v.has(next) ? v : new Set(v).add(next)));
     };
     sync();
-    window.addEventListener("hashchange", sync);
-    return () => window.removeEventListener("hashchange", sync);
+    // Every hash change after first load is a navigation (nav links, back and forward), so the shell resets scroll and focus.
+    const onHashChange = () => {
+      sync();
+      setNavigated(true);
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
   const go = useCallback((id: SectionId) => {

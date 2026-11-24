@@ -94,7 +94,7 @@ test("route planner: places in, ranked routes out, accessible", async ({ page })
   await page.getByLabel("From").fill("Colaba Causeway, Mumbai");
   await page.getByLabel("To", { exact: true }).fill("Bandra Kurla Complex, Mumbai");
   await page.getByRole("button", { name: "Find routes" }).click();
-  const section = page.getByRole("region", { name: "Cleaner routes" });
+  const section = page.getByRole("region", { name: "Plan a trip" });
   await expect(section.getByText("Cleanest air")).toBeVisible();
   await expect(section).toContainText("Lowest estimated PM2.5 inhaled (7.9 µg)");
   await expect(section).toContainText("not measured on the route");

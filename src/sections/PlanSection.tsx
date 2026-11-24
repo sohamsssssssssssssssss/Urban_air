@@ -29,9 +29,10 @@ export default function PlanSection({ app }: { app: AppApi }) {
     <Lazy>
       {planState === "error" && <EmptyState kind="error" title={t.errorTitle} body={app.planError} action={<button type="button" onClick={() => void loadPlan()} className={buttonClass("primary")}>{t.retry}</button>} />}
       {planState !== "error" && !plan && (
-        <div aria-busy="true">
-          <p role="status" className="sr-only">{UI[language].plan.building}</p>
-          <Skeleton className="h-96" />
+        <div aria-busy="true" className="rounded-card border border-line bg-surface p-5 shadow-card">
+          <p role="status" aria-live="polite" className="font-bold text-ink-muted">{UI[language].plan.building}</p>
+          <Skeleton className="mt-4 h-96" />
+          <p className="mt-2 text-ink-muted text-xs">{UI[language].plan.building}</p>
         </div>
       )}
       {plan && setup.profile.kids && <KidModeToggle enabled={app.kidMode} busy={planState === "loading"} language={language} onChange={app.changeTone} />}
